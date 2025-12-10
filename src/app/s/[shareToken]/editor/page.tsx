@@ -24,6 +24,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
     <EditorClient
       assignmentId={assignment.id}
       assignmentTitle={assignment.title}
+      assignmentInstructions={assignment.instructions}
       deadline={assignment.deadline}
     />
   );

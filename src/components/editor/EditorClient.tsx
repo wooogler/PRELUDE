@@ -7,14 +7,16 @@ import ChatPanel from '../chat/ChatPanel';
 interface EditorClientProps {
   assignmentId: string;
   assignmentTitle: string;
+  assignmentInstructions: string;
   deadline: Date;
 }
 
-export default function EditorClient({ assignmentId, assignmentTitle, deadline }: EditorClientProps) {
+export default function EditorClient({ assignmentId, assignmentTitle, assignmentInstructions, deadline }: EditorClientProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'ready' | 'saved'>('ready');
   const [chatWidth, setChatWidth] = useState(480); // Default 480px (larger chat width)
   const [isResizing, setIsResizing] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     // Get session ID from localStorage
@@ -83,9 +85,18 @@ export default function EditorClient({ assignmentId, assignmentTitle, deadline }
             <h1 className="text-xl font-bold text-gray-900">
               {assignmentTitle}
             </h1>
-            <p className="text-sm text-gray-600">
-              Due: {deadline.toLocaleDateString()}
-            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-sm text-gray-600">
+                Due: {deadline.toLocaleDateString()}
+              </p>
+              <span className="text-gray-400">•</span>
+              <button
+                onClick={() => setShowInstructions(!showInstructions)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {showInstructions ? 'Hide Instructions' : 'View Instructions'}
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <span className={`text-sm ${saveStatus === 'saved' ? 'text-green-600' : 'text-gray-500'}`}>
@@ -99,6 +110,21 @@ export default function EditorClient({ assignmentId, assignmentTitle, deadline }
       <div className="flex-1 flex overflow-hidden">
         {/* Editor (Left) */}
         <div className="flex-1 flex flex-col border-r border-gray-200">
+          {/* Instructions Panel (Collapsible) */}
+          {showInstructions && (
+            <div className="border-b border-gray-200 bg-blue-50">
+              <div className="max-w-4xl mx-auto p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Assignment Instructions</h2>
+                <div className="prose prose-sm max-w-none max-h-80 overflow-auto bg-white rounded-lg p-4 border border-blue-200">
+                  <div className="whitespace-pre-wrap text-gray-700">
+                    {assignmentInstructions}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Editor */}
           <div className="flex-1 overflow-auto p-6">
             <div className="max-w-4xl mx-auto">
               <TrackedEditor sessionId={sessionId} />
