@@ -26,6 +26,22 @@ export async function POST(req: Request) {
       systemPrompt += `\n\nAssignment Instructions:\n${assignment.instructions}`;
     }
 
+    // Save user message immediately with current timestamp
+    const lastMessage = messages[messages.length - 1];
+    const userMessageTimestamp = new Date();
+    const existingMessages = await db.query.chatMessages.findMany({
+      where: eq(chatMessages.conversationId, conversationId),
+    });
+
+    await db.insert(chatMessages).values({
+      conversationId,
+      role: 'user',
+      content: lastMessage.content,
+      metadata: {},
+      timestamp: userMessageTimestamp,
+      sequenceNumber: existingMessages.length,
+    });
+
     // Stream response from OpenAI
     const result = await streamText({
       model: openai('gpt-4-turbo'),
@@ -34,19 +50,8 @@ export async function POST(req: Request) {
       async onFinish({ text, usage }) {
         // Save assistant message to database
         try {
-          const lastMessage = messages[messages.length - 1];
-          const userSequence = await db.query.chatMessages.findMany({
+          const updatedMessages = await db.query.chatMessages.findMany({
             where: eq(chatMessages.conversationId, conversationId),
-          });
-
-          // Save user message
-          await db.insert(chatMessages).values({
-            conversationId,
-            role: 'user',
-            content: lastMessage.content,
-            metadata: {},
-            timestamp: new Date(),
-            sequenceNumber: userSequence.length,
           });
 
           // Save assistant message
@@ -56,10 +61,10 @@ export async function POST(req: Request) {
             content: text,
             metadata: { tokens: usage, model: 'gpt-4-turbo' },
             timestamp: new Date(),
-            sequenceNumber: userSequence.length + 1,
+            sequenceNumber: updatedMessages.length,
           });
         } catch (error) {
-          console.error('Failed to save chat messages:', error);
+          console.error('Failed to save assistant message:', error);
         }
       },
     });

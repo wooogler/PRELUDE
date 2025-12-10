@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { BlockNoteView } from '@blocknote/mantine';
+import { useCreateBlockNote } from '@blocknote/react';
+import '@blocknote/core/fonts/inter.css';
+import '@blocknote/mantine/style.css';
 
 interface EditorEvent {
   id: number;
@@ -49,12 +53,17 @@ export default function ReplayPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(startTime);
   const [speed, setSpeed] = useState(5); // Default 5x speed
-  const [editorContent, setEditorContent] = useState('');
+  const [editorDocument, setEditorDocument] = useState<any[]>([]);
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
   const [lastPasteEvent, setLastPasteEvent] = useState<{ type: string; timestamp: number } | null>(null);
 
   const animationRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
+
+  // Create BlockNote editor for replay
+  const editor = useCreateBlockNote({
+    initialContent: editorDocument.length > 0 ? editorDocument : undefined,
+  });
 
   const duration = endTime - startTime;
   const progress = duration > 0 ? ((currentTime - startTime) / duration) * 100 : 0;
@@ -73,31 +82,16 @@ export default function ReplayPlayer({
     const snapshot = findNearestSnapshot(time);
 
     if (snapshot && snapshot.eventData) {
-      // Extract text from BlockNote document structure
-      const doc = snapshot.eventData as unknown as Array<{
-        type?: string;
-        content?: Array<{ type?: string; text?: string; styles?: any }>;
-      }>;
-
+      // Return BlockNote document structure directly
+      const doc = snapshot.eventData as unknown as any[];
       if (Array.isArray(doc)) {
-        let text = '';
-        doc.forEach((block) => {
-          if (block.type === 'paragraph' && block.content && Array.isArray(block.content)) {
-            block.content.forEach((item) => {
-              if (item.type === 'text' && item.text) {
-                text += item.text;
-              }
-            });
-            text += '\n';
-          }
-        });
-        return text.trim();
+        return doc;
       }
     }
 
-    // No snapshot yet - show initial state (empty)
-    return '';
-  }, [events, findNearestSnapshot]);
+    // No snapshot yet - show initial state (empty paragraph)
+    return [{ type: 'paragraph', content: [] }];
+  }, [findNearestSnapshot]);
 
   // Update visible messages based on current time
   const updateVisibleMessages = useCallback((time: number) => {
@@ -163,10 +157,17 @@ export default function ReplayPlayer({
   // Update content when current time changes
   useEffect(() => {
     const content = rebuildContent(currentTime);
-    setEditorContent(content);
+    setEditorDocument(content);
     updateVisibleMessages(currentTime);
     checkPasteEvents(currentTime);
   }, [currentTime, rebuildContent, updateVisibleMessages, checkPasteEvents]);
+
+  // Update editor when document changes
+  useEffect(() => {
+    if (editor && editorDocument.length > 0) {
+      editor.replaceBlocks(editor.document, editorDocument);
+    }
+  }, [editor, editorDocument]);
 
   // Handle timeline click
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -337,13 +338,11 @@ export default function ReplayPlayer({
             )}
 
             <div className="max-w-3xl mx-auto">
-              <div className="prose">
-                <pre className="whitespace-pre-wrap font-sans text-base text-gray-900 bg-transparent border-0 p-0">
-                  {editorContent || (
-                    <span className="text-gray-400 italic">No content yet...</span>
-                  )}
-                </pre>
-              </div>
+              <BlockNoteView
+                editor={editor}
+                editable={false}
+                theme="light"
+              />
             </div>
           </div>
         </div>
