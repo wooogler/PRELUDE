@@ -8,13 +8,13 @@ interface SendMagicLinkParams {
 }
 
 export async function sendMagicLink({ to, magicLink }: SendMagicLinkParams) {
-  const fromAddress = process.env.EMAIL_FROM || 'PRELUDE <onboarding@resend.dev>';
+  const fromAddress = process.env.EMAIL_FROM || 'SWAG <onboarding@resend.dev>';
 
   try {
     const { data, error } = await resend.emails.send({
       from: fromAddress,
       to,
-      subject: 'Your PRELUDE Login Link',
+      subject: 'Your SWAG Login Link',
       html: `
         <!DOCTYPE html>
         <html>
@@ -24,12 +24,12 @@ export async function sendMagicLink({ to, magicLink }: SendMagicLinkParams) {
           </head>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
-              <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 24px;">PRELUDE Instructor Portal</h1>
+              <h1 style="color: #1a1a1a; margin: 0 0 20px 0; font-size: 24px;">SWAG Instructor Portal</h1>
               <p style="margin: 0 0 20px 0; font-size: 16px;">Click the button below to log in to your instructor account:</p>
 
               <a href="${magicLink}"
                  style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: 600; font-size: 16px;">
-                Log In to PRELUDE
+                Log In to SWAG
               </a>
 
               <p style="margin: 20px 0 0 0; font-size: 14px; color: #666;">
@@ -46,7 +46,7 @@ export async function sendMagicLink({ to, magicLink }: SendMagicLinkParams) {
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
 
             <p style="font-size: 12px; color: #999; margin: 0;">
-              <strong>PRELUDE</strong> - Process and Replay for LLM Usage and Drafting Events<br>
+              <strong>SWAG</strong> - Student Writing with Accountable Generative AI<br>
               Virginia Tech
             </p>
           </body>

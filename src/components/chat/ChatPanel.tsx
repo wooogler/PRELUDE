@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import ConversationList from './ConversationList';
 import ChatMessages from './ChatMessages';
 
@@ -20,15 +21,20 @@ export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [input, setInput] = useState('');
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/chat',
-    body: {
-      conversationId: activeConversationId,
-      sessionId,
-      assignmentId,
-    },
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: {
+        conversationId: activeConversationId,
+        sessionId,
+        assignmentId,
+      },
+    }),
   });
+
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   // Create initial conversation on mount
   useEffect(() => {
@@ -118,16 +124,34 @@ export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
     }
   };
 
+  // Helper to extract text from UIMessage
+  const getMessageContent = (message: any): string => {
+    return message.parts
+      ?.filter((part: any) => part.type === 'text')
+      .map((part: any) => part.text)
+      .join('') || '';
+  };
+
   // Auto-generate title from first message
   useEffect(() => {
     if (messages.length === 1 && activeConversationId) {
       const firstMessage = messages[0];
       if (firstMessage.role === 'user') {
-        const title = firstMessage.content.slice(0, 50) + (firstMessage.content.length > 50 ? '...' : '');
+        const content = getMessageContent(firstMessage);
+        const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
         updateConversationTitle(activeConversationId, title);
       }
     }
   }, [messages]);
+
+  // Handle form submit
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && status === 'ready') {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -166,9 +190,9 @@ export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
           <input
             type="text"
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Ask for help with your essay..."
-            disabled={!activeConversationId}
+            disabled={!activeConversationId || status !== 'ready'}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm"
           />
           <button

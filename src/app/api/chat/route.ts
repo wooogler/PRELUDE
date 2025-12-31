@@ -43,8 +43,8 @@ export async function POST(req: Request) {
     });
 
     // Stream response from OpenAI
-    const result = await streamText({
-      model: openai('gpt-4-turbo'),
+    const result = streamText({
+      model: openai('gpt-4-turbo') as any,
       messages: messages,
       system: systemPrompt,
       async onFinish({ text, usage }) {
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response('Internal server error', { status: 500 });

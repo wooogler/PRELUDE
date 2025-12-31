@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Message } from 'ai/react';
+import { UIMessage } from '@ai-sdk/react';
 import { getGlobalValidator } from '@/lib/copy-validator';
 
 interface ChatMessagesProps {
-  messages: Message[];
+  messages: UIMessage[];
   isLoading: boolean;
 }
 
@@ -14,11 +14,19 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const validator = getGlobalValidator();
 
+  // Helper function to extract text content from UIMessage
+  const getMessageContent = (message: UIMessage): string => {
+    return message.parts
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('');
+  };
+
   // Register all assistant messages with validator
   useEffect(() => {
     messages.forEach((message) => {
       if (message.role === 'assistant') {
-        validator.registerChatMessage(message.content);
+        validator.registerChatMessage(getMessageContent(message));
       }
     });
   }, [messages, validator]);
@@ -57,6 +65,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
       {messages.map((message) => {
         const isUser = message.role === 'user';
         const isCopied = copiedId === message.id;
+        const content = getMessageContent(message);
 
         return (
           <div
@@ -73,14 +82,14 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
               <div className="flex items-start gap-2">
                 <div className="flex-1">
                   <p className="text-sm whitespace-pre-wrap break-words">
-                    {message.content}
+                    {content}
                   </p>
                 </div>
 
                 {/* Copy button for assistant messages */}
                 {!isUser && (
                   <button
-                    onClick={() => copyToClipboard(message.content, message.id)}
+                    onClick={() => copyToClipboard(content, message.id)}
                     className="flex-shrink-0 text-gray-500 hover:text-blue-600 transition-colors"
                     title="Copy message"
                   >

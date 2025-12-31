@@ -1,11 +1,11 @@
-# PRELUDE
-**Process and Replay for LLM Usage and Drafting Events**
+# SWAG
+**Student Writing with Accountable Generative AI**
 
 A research tool for tracking and analyzing student writing processes with LLM assistance.
 
 ## Overview
 
-PRELUDE captures character-level writing interactions to help educators understand how students use LLM tools during writing assignments. The system records editing patterns, LLM conversations, and copy-paste behaviors, then provides an interactive replay interface for analysis.
+SWAG captures character-level writing interactions to help educators understand how students use LLM tools during writing assignments. The system records editing patterns, LLM conversations, and copy-paste behaviors, then provides an interactive replay interface for analysis.
 
 ## Key Features
 
@@ -76,7 +76,7 @@ Required variables:
 - `NEXT_PUBLIC_APP_URL` - Application URL
 - `JWT_SECRET` - Random secret for authentication (generate with `openssl rand -base64 32`)
 - `RESEND_API_KEY` - Resend API key for email verification
-- `EMAIL_FROM` - Sender email address (e.g., "PRELUDE <onboarding@resend.dev>")
+- `EMAIL_FROM` - Sender email address (e.g., "SWAG <onboarding@resend.dev>")
 - `ALLOWED_EMAIL_DOMAINS` - Comma-separated allowed domains (e.g., "vt.edu")
 
 **Email Configuration:**
@@ -116,7 +116,7 @@ Using Resend (https://resend.com) for email verification:
 ## Project Structure
 
 ```
-prelude/
+swag/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx                          # Root redirect to /instructor/login
@@ -241,12 +241,13 @@ git push origin main
 4. Framework Preset: Next.js (auto-detected)
 5. Click "Deploy" (initial deployment will fail - database not configured yet)
 
-**Step 3: Create Vercel Postgres Database**
+**Step 3: Create Vercel Postgres Database (Powered by Neon)**
 1. In your Vercel project, go to "Storage" tab
 2. Click "Create Database" → "Postgres"
-3. Name: `prelude-db` (or any name)
+3. Name: `swag-db` (or any name)
 4. Region: `iad1` (Washington D.C. - closest to VT)
 5. Click "Create"
+   - ℹ️ Vercel Postgres uses Neon as the underlying database provider
 
 **Step 4: Configure Environment Variables**
 1. Go to "Settings" → "Environment Variables"
@@ -264,7 +265,7 @@ JWT_SECRET=<generate with: openssl rand -base64 32>
 
 # Email (Resend)
 RESEND_API_KEY=re_...
-EMAIL_FROM=PRELUDE <onboarding@resend.dev>
+EMAIL_FROM=SWAG <onboarding@resend.dev>
 ALLOWED_EMAIL_DOMAINS=vt.edu
 
 # Application
@@ -289,7 +290,7 @@ npm run db:migrate
 4. Click "Redeploy"
 
 **Step 7: Verify Deployment**
-1. Visit your Vercel URL (e.g., `https://prelude.vercel.app`)
+1. Visit your Vercel URL (e.g., `https://swag.vercel.app`)
 2. Go to `/instructor/login`
 3. Test signup and login flow
 
