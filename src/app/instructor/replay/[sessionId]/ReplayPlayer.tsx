@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { useCreateBlockNote } from '@blocknote/react';
+import ChatMessages from '@/components/chat/ChatMessages';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
@@ -355,9 +356,9 @@ export default function ReplayPlayer({
         </div>
 
         {/* Chat View (Right) */}
-        <div className="w-96 flex flex-col bg-gray-50">
-          <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-2">
+        <div className="w-96 flex flex-col bg-white">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-900">AI Assistant</h2>
               {conversations.length > 1 && (
                 <select
@@ -375,41 +376,20 @@ export default function ReplayPlayer({
               )}
             </div>
           </div>
-          <div className="flex-1 overflow-auto p-4">
-            {visibleMessages.length === 0 ? (
-              <div className="text-center text-gray-500 mt-8">
-                No chat messages yet at this point
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {visibleMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`p-3 rounded-lg ${
-                      msg.role === 'user'
-                        ? 'bg-blue-100 ml-8'
-                        : 'bg-white border border-gray-200 mr-8'
-                    }`}
-                  >
-                    <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
-                      <span>{msg.role === 'user' ? 'Student' : 'AI Assistant'}</span>
-                      {selectedConversationId === 'all' && (
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                          {msg.conversationTitle}
-                        </span>
-                      )}
-                      <span className="ml-auto">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-900 whitespace-pre-wrap">
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+
+          <ChatMessages
+            messages={visibleMessages.map(msg => ({
+              id: msg.id,
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content,
+              conversationTitle: msg.conversationTitle,
+              timestamp: msg.timestamp,
+            }))}
+            isLoading={false}
+            showConversationBadge={selectedConversationId === 'all'}
+            showTimestamp={true}
+            enableCopy={false}
+          />
         </div>
       </div>
     </div>

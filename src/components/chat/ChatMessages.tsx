@@ -6,19 +6,30 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface Message {
-  id: string;
+  id: string | number;
   role: 'user' | 'assistant';
   content: string;
+  conversationTitle?: string;
+  timestamp?: number;
 }
 
 interface ChatMessagesProps {
   messages: Message[];
-  isLoading: boolean;
+  isLoading?: boolean;
+  showConversationBadge?: boolean;
+  showTimestamp?: boolean;
+  enableCopy?: boolean;
 }
 
-export default function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export default function ChatMessages({
+  messages,
+  isLoading = false,
+  showConversationBadge = false,
+  showTimestamp = false,
+  enableCopy = true
+}: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const validator = getGlobalValidator();
 
   // Register all assistant messages with validator
@@ -35,7 +46,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const copyToClipboard = async (content: string, messageId: string) => {
+  const copyToClipboard = async (content: string, messageId: string | number) => {
     try {
       await navigator.clipboard.writeText(content);
       setCopiedId(messageId);
@@ -77,7 +88,20 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
                 // User message - ChatGPT style gray bubble
                 <div className="flex justify-end">
                   <div className="bg-gray-200 text-gray-900 rounded-2xl px-4 py-2.5 max-w-[80%]">
-                    <p className="text-sm whitespace-pre-wrap break-words">
+                    {/* Conversation badge and timestamp for user messages */}
+                    {(showConversationBadge || showTimestamp) && (
+                      <div className="flex items-center gap-2 mb-1 text-xs text-gray-600">
+                        {showConversationBadge && message.conversationTitle && (
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">
+                            {message.conversationTitle}
+                          </span>
+                        )}
+                        {showTimestamp && message.timestamp && (
+                          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-sm whitespace-pre-wrap wrap-break-word">
                       {message.content}
                     </p>
                   </div>
@@ -85,14 +109,28 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
               ) : (
                 // Assistant message - full width, markdown, no bubble
                 <div>
+                  {/* Conversation badge and timestamp for AI messages */}
+                  {(showConversationBadge || showTimestamp) && (
+                    <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
+                      {showConversationBadge && message.conversationTitle && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">
+                          {message.conversationTitle}
+                        </span>
+                      )}
+                      {showTimestamp && message.timestamp && (
+                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                      )}
+                    </div>
+                  )}
+
                   <div className="prose prose-sm max-w-none prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {message.content}
                     </ReactMarkdown>
                   </div>
 
-                  {/* Copy button - only show when not streaming */}
-                  {!isStreaming && (
+                  {/* Copy button - only show when enabled and not streaming */}
+                  {enableCopy && !isStreaming && (
                     <div className="mt-2">
                       <button
                         onClick={() => copyToClipboard(message.content, message.id)}
