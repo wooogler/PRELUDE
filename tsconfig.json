@@ -26,7 +26,6 @@
         "./src/*"
       ]
     },
-    "types": ["@types/bun"],
     "target": "ES2017"
   },
   "include": [
