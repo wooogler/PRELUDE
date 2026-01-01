@@ -16,16 +16,6 @@ const nextConfig: NextConfig = {
       };
     }
 
-    // Exclude BlockNote from SSR compilation
-    config.externals = config.externals || [];
-    if (isServer) {
-      config.externals.push({
-        '@blocknote/core': 'commonjs @blocknote/core',
-        '@blocknote/react': 'commonjs @blocknote/react',
-        '@blocknote/mantine': 'commonjs @blocknote/mantine',
-      });
-    }
-
     return config;
   },
 };

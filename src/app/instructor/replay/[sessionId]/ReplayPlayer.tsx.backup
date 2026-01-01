@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { useCreateBlockNote } from '@blocknote/react';
 import ChatPanel from '@/components/chat/ChatPanel';
-import { useUIStore } from '@/stores/uiStore';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
@@ -52,24 +51,15 @@ export default function ReplayPlayer({
   startTime,
   endTime,
 }: ReplayPlayerProps) {
-  // UI Store for chat panel
-  const {
-    isChatOpen,
-    chatWidth,
-    isResizing,
-    setChatOpen,
-    startResize,
-    handleResize,
-    stopResize,
-  } = useUIStore();
-
-  // Replay-specific state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(startTime);
   const [speed, setSpeed] = useState(5); // Default 5x speed
   const [editorDocument, setEditorDocument] = useState<any[]>([]);
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
   const [lastPasteEvent, setLastPasteEvent] = useState<{ type: string; timestamp: number } | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [chatWidth, setChatWidth] = useState(480); // Default 480px (same as student editor)
+  const [isResizing, setIsResizing] = useState(false);
 
   const animationRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
@@ -82,21 +72,34 @@ export default function ReplayPlayer({
   const duration = endTime - startTime;
   const progress = duration > 0 ? ((currentTime - startTime) / duration) * 100 : 0;
 
-  // Handle resize with mouse events
+  // Handle resize
   useEffect(() => {
-    if (!isResizing) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
 
-    const handleMouseMove = (e: MouseEvent) => handleResize(e.clientX);
-    const handleMouseUp = () => stopResize();
+      const newWidth = window.innerWidth - e.clientX;
+      // Min 300px, max 800px
+      setChatWidth(Math.min(Math.max(newWidth, 300), 800));
+    };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
-  }, [isResizing, handleResize, stopResize]);
+  }, [isResizing]);
 
   // Find the nearest snapshot before current time
   const findNearestSnapshot = useCallback((time: number) => {
@@ -165,9 +168,7 @@ export default function ReplayPlayer({
       setCurrentTime((prev) => {
         const newTime = prev + deltaMs * speed;
         if (newTime >= endTime) {
-          // Stop playing when reaching the end
-          // Use setTimeout to avoid state update during render
-          setTimeout(() => setIsPlaying(false), 0);
+          setIsPlaying(false);
           return endTime;
         }
         return newTime;
@@ -383,7 +384,7 @@ export default function ReplayPlayer({
         {isChatOpen && (
           <div
             className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize transition-colors"
-            onMouseDown={startResize}
+            onMouseDown={() => setIsResizing(true)}
           />
         )}
 
@@ -393,7 +394,7 @@ export default function ReplayPlayer({
             <ChatPanel
               mode="replay"
               isOpen={isChatOpen}
-              onToggle={setChatOpen}
+              onToggle={setIsChatOpen}
               replayConversations={conversations.map(c => ({
                 id: c.id,
                 title: c.title,
@@ -415,7 +416,7 @@ export default function ReplayPlayer({
         {!isChatOpen && (
           <div className="fixed top-1/2 right-0 -translate-y-1/2 z-50">
             <button
-              onClick={() => setChatOpen(true)}
+              onClick={() => setIsChatOpen(true)}
               className="bg-blue-600 text-white px-3 py-6 rounded-l-lg shadow-lg hover:px-4 transition-all duration-300 flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

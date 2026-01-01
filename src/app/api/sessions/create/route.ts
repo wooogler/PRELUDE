@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { studentSessions } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
 const createSessionSchema = z.object({
@@ -14,22 +15,42 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validated = createSessionSchema.parse(body);
 
-    // Create session
-    const sessionId = crypto.randomUUID();
-
-    await db.insert(studentSessions).values({
-      id: sessionId,
-      assignmentId: validated.assignmentId,
-      studentName: validated.studentName,
-      studentEmail: validated.studentEmail,
-      startedAt: new Date(),
-      lastSavedAt: null,
+    // Check if a session already exists for this email + assignment combination
+    const existingSession = await db.query.studentSessions.findFirst({
+      where: and(
+        eq(studentSessions.studentEmail, validated.studentEmail),
+        eq(studentSessions.assignmentId, validated.assignmentId)
+      ),
     });
 
+    let sessionId: string;
+    let isExisting = false;
+
+    if (existingSession) {
+      // Reuse existing session
+      sessionId = existingSession.id;
+      isExisting = true;
+      console.log(`Existing session found for ${validated.studentEmail}: ${sessionId}`);
+    } else {
+      // Create new session
+      sessionId = crypto.randomUUID();
+
+      await db.insert(studentSessions).values({
+        id: sessionId,
+        assignmentId: validated.assignmentId,
+        studentName: validated.studentName,
+        studentEmail: validated.studentEmail,
+        startedAt: new Date(),
+        lastSavedAt: null,
+      });
+
+      console.log(`New session created for ${validated.studentEmail}: ${sessionId}`);
+    }
+
     return NextResponse.json(
-      { sessionId },
+      { sessionId, isExisting },
       {
-        status: 201,
+        status: isExisting ? 200 : 201,
         headers: {
           // Set HTTP-only cookie for additional security
           'Set-Cookie': `prelude_session=${sessionId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}`,

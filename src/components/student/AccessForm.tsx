@@ -14,14 +14,16 @@ export default function AccessForm({ assignmentId, shareToken }: AccessFormProps
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
-      // Create session
+      // Create or find existing session
       const response = await fetch('/api/sessions/create', {
         method: 'POST',
         headers: {
@@ -38,7 +40,17 @@ export default function AccessForm({ assignmentId, shareToken }: AccessFormProps
         throw new Error('Failed to create session');
       }
 
-      const { sessionId } = await response.json();
+      const { sessionId, isExisting } = await response.json();
+
+      // Show feedback message
+      if (isExisting) {
+        setSuccessMessage('Welcome back! Resuming your previous session...');
+      } else {
+        setSuccessMessage('Session created! Redirecting to editor...');
+      }
+
+      // Small delay to show the message
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Redirect to editor with sessionId in URL
       router.push(`/s/${shareToken}/editor/${sessionId}`);
@@ -85,6 +97,15 @@ export default function AccessForm({ assignmentId, shareToken }: AccessFormProps
       {error && (
         <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="text-green-600 text-sm bg-green-50 p-3 rounded-lg flex items-center gap-2">
+          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          {successMessage}
         </div>
       )}
 

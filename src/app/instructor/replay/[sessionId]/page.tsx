@@ -4,7 +4,7 @@ import { eq, and, asc } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import ReplayPlayer from './ReplayPlayer';
+import ReplayClient from './ReplayClient';
 
 async function getInstructor() {
   const cookieStore = await cookies();
@@ -131,7 +131,7 @@ export default async function ReplayPage({ params }: PageProps) {
       </header>
 
       {/* Replay Player */}
-      <ReplayPlayer
+      <ReplayClient
         events={events.map(e => ({
           ...e,
           timestamp: e.timestamp.getTime(),

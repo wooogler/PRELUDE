@@ -1,11 +1,29 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getGlobalValidator } from '@/lib/copy-validator';
 import toast, { Toaster } from 'react-hot-toast';
 import ConversationList from './ConversationList';
 import ChatMessages from './ChatMessages';
-import { useChatStore, type Conversation, type Message } from '@/stores/chatStore';
+
+interface Conversation {
+  id: string;
+  title: string;
+  createdAt: Date;
+}
+
+interface Message {
+  id: string | number;
+  role: 'user' | 'assistant';
+  content: string;
+  conversationTitle?: string;
+  timestamp?: number;
+  metadata?: {
+    webSearchEnabled?: boolean;
+    webSearchUsed?: boolean;
+    [key: string]: any;
+  };
+}
 
 interface ChatPanelProps {
   sessionId?: string;
@@ -27,40 +45,19 @@ export default function ChatPanel({
   replayConversations = [],
   replayMessages = []
 }: ChatPanelProps) {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null | 'all'>('all');
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const validator = getGlobalValidator();
 
-  // Zustand store
-  const {
-    conversations,
-    activeConversationId,
-    messages,
-    input,
-    isLoading,
-    isCreatingConversation,
-    webSearchEnabled,
-    setMode,
-    setConversations,
-    setActiveConversationId,
-    setMessages,
-    setInput,
-    toggleWebSearch,
-    loadConversations,
-    loadMessages,
-    createConversation,
-    updateConversationTitle,
-    deleteConversation,
-    sendMessage,
-  } = useChatStore();
-
   const isReplayMode = mode === 'replay';
 
-  // Set mode on mount
-  useEffect(() => {
-    setMode(mode);
-  }, [mode, setMode]);
-
-  // Load conversations on mount
+  // Load existing conversations on mount
   useEffect(() => {
     if (isReplayMode) {
       // Use replay conversations
@@ -73,11 +70,46 @@ export default function ChatPanel({
       return;
     }
 
-    if (sessionId) {
-      loadConversations(sessionId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isReplayMode]);
+    const loadConversations = async () => {
+      try {
+        const response = await fetch('/api/conversations/list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load conversations');
+        }
+
+        const { conversations: existingConversations } = await response.json();
+
+        if (existingConversations.length > 0) {
+          // Load existing conversations
+          setConversations(existingConversations.map((conv: any) => ({
+            id: conv.id,
+            title: conv.title,
+            createdAt: new Date(conv.createdAt),
+          })));
+          // Set the most recent conversation as active
+          setActiveConversationId(existingConversations[existingConversations.length - 1].id);
+        } else {
+          // No existing conversations, create a new one
+          createNewConversation();
+        }
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+        // Fallback: create new conversation
+        createNewConversation();
+      }
+    };
+
+    loadConversations();
+  }, [sessionId, isReplayMode, replayConversations]);
 
   // Load messages when active conversation changes
   useEffect(() => {
@@ -88,31 +120,42 @@ export default function ChatPanel({
       if (activeConversationId === 'all') {
         setMessages(replayMessages);
       } else {
-        const filtered = replayMessages.filter(m =>
-          m.conversationTitle === conversations.find(c => c.id === activeConversationId)?.title
-        );
+        const filtered = replayMessages.filter(m => m.conversationTitle === conversations.find(c => c.id === activeConversationId)?.title);
         setMessages(filtered);
       }
       return;
     }
 
-    if (activeConversationId !== 'all') {
-      loadMessages(activeConversationId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeConversationId, isReplayMode, replayMessages]);
+    const loadMessages = async () => {
+      try {
+        const response = await fetch('/api/conversations/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversationId: activeConversationId,
+          }),
+        });
 
-  // Copy/Paste validation for chat input
+        if (!response.ok) {
+          throw new Error('Failed to load messages');
+        }
+
+        const { messages: loadedMessages } = await response.json();
+        setMessages(loadedMessages);
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+      }
+    };
+
+    loadMessages();
+  }, [activeConversationId, isReplayMode, replayMessages, conversations]);
+
+  // Paste validation for chat input
   useEffect(() => {
     const inputElement = inputRef.current;
     if (!inputElement) return;
-
-    const handleCopy = () => {
-      const copiedContent = window.getSelection()?.toString();
-      if (copiedContent) {
-        validator.markInternalCopy(copiedContent);
-      }
-    };
 
     const handlePaste = (e: ClipboardEvent) => {
       const pastedContent = e.clipboardData?.getData('text/plain');
@@ -137,18 +180,100 @@ export default function ChatPanel({
       }
     };
 
-    inputElement.addEventListener('copy', handleCopy);
     inputElement.addEventListener('paste', handlePaste as EventListener);
 
     return () => {
-      inputElement.removeEventListener('copy', handleCopy);
       inputElement.removeEventListener('paste', handlePaste as EventListener);
     };
   }, [validator]);
 
+  const createNewConversation = async () => {
+    if (isCreatingConversation) return;
+    setIsCreatingConversation(true);
+
+    try {
+      const response = await fetch('/api/conversations/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId,
+        }),
+      });
+
+      const { conversationId, title } = await response.json();
+
+      const newConversation: Conversation = {
+        id: conversationId,
+        title,
+        createdAt: new Date(),
+      };
+
+      setConversations((prev) => [...prev, newConversation]);
+      setActiveConversationId(conversationId);
+      // Messages will be loaded by the useEffect when activeConversationId changes
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
+  const updateConversationTitle = async (conversationId: string, title: string) => {
+    try {
+      await fetch('/api/conversations/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversationId,
+          title,
+        }),
+      });
+
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId ? { ...conv, title } : conv
+        )
+      );
+    } catch (error) {
+      console.error('Failed to update conversation title:', error);
+    }
+  };
+
+  const deleteConversation = async (conversationId: string) => {
+    if (!confirm('Delete this conversation?')) return;
+
+    try {
+      await fetch('/api/conversations/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ conversationId }),
+      });
+
+      setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
+
+      // If deleted conversation was active, switch to another or create new
+      if (activeConversationId === conversationId) {
+        const remaining = conversations.filter((conv) => conv.id !== conversationId);
+        if (remaining.length > 0) {
+          setActiveConversationId(remaining[0].id);
+        } else {
+          createNewConversation();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  };
+
   // Auto-generate title from first message (only in live mode)
   useEffect(() => {
-    if (isReplayMode) return;
+    if (isReplayMode) return; // Skip in replay mode
 
     if (messages.length === 1 && activeConversationId && activeConversationId !== 'all') {
       const firstMessage = messages[0];
@@ -157,33 +282,86 @@ export default function ChatPanel({
         updateConversationTitle(activeConversationId, title);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, activeConversationId, isReplayMode]);
 
-  // Handle form submit
+  // Handle form submit with streaming
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || !activeConversationId || activeConversationId === 'all') return;
+    if (!input.trim() || isLoading || !activeConversationId) return;
 
-    await sendMessage({
-      conversationId: activeConversationId,
-      sessionId,
-      assignmentId,
-    });
-  };
+    const userMessage: Message = {
+      id: `msg_${Date.now()}`,
+      role: 'user',
+      content: input.trim(),
+    };
 
-  const handleCreateConversation = () => {
-    if (sessionId) {
-      createConversation(sessionId);
-    }
-  };
+    // Add user message immediately
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
-  const handleDeleteConversation = async (conversationId: string) => {
-    await deleteConversation(conversationId);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+          conversationId: activeConversationId,
+          sessionId,
+          assignmentId,
+          webSearchEnabled,
+        }),
+      });
 
-    // If we need to create a new conversation after deleting the last one
-    if (conversations.length === 1 && sessionId) {
-      createConversation(sessionId);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Read streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No reader available');
+      }
+
+      // Create assistant message placeholder
+      const assistantMessageId = `msg_${Date.now() + 1}`;
+      let assistantContent = '';
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '',
+        },
+      ]);
+
+      // Read stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantContent += chunk;
+
+        // Update assistant message with accumulated content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: assistantContent }
+              : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Optionally show error message to user
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -207,7 +385,7 @@ export default function ChatPanel({
             {/* New conversation button - only show in live mode */}
             {!isReplayMode && (
               <button
-                onClick={handleCreateConversation}
+                onClick={createNewConversation}
                 disabled={isCreatingConversation}
                 className="text-gray-600 hover:text-gray-900 disabled:text-gray-400"
                 title="New conversation"
@@ -229,15 +407,15 @@ export default function ChatPanel({
           </div>
         </div>
 
-        {/* Conversation filter - show in replay mode when there are conversations */}
-        {isReplayMode && conversations.length > 0 && (
+        {/* Conversation filter - show in replay mode when there are multiple conversations */}
+        {isReplayMode && conversations.length > 1 && (
           <div className="border-b border-gray-200 px-4 py-2 bg-gray-50">
             <select
               value={activeConversationId || ''}
               onChange={(e) => setActiveConversationId(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All conversations ({conversations.length})</option>
+              <option value="all">All conversations</option>
               {conversations.map((conv) => (
                 <option key={conv.id} value={conv.id}>
                   {conv.title}
@@ -254,7 +432,7 @@ export default function ChatPanel({
             activeConversationId={activeConversationId}
             onSelectConversation={setActiveConversationId}
             onUpdateTitle={updateConversationTitle}
-            onDeleteConversation={handleDeleteConversation}
+            onDeleteConversation={deleteConversation}
           />
         )}
 
@@ -308,7 +486,7 @@ export default function ChatPanel({
                   {/* Web Search Toggle - Ghost style */}
                   <button
                     type="button"
-                    onClick={toggleWebSearch}
+                    onClick={() => setWebSearchEnabled(!webSearchEnabled)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
                       webSearchEnabled
                         ? 'text-sky-500 bg-gray-300 hover:bg-gray-400'
