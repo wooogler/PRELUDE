@@ -66,14 +66,6 @@ export default async function ReplayPage({ params }: PageProps) {
     .where(eq(chatConversations.sessionId, sessionId))
     .orderBy(asc(chatConversations.createdAt));
 
-  const messages = await db
-    .select()
-    .from(chatMessages)
-    .where(
-      eq(chatMessages.conversationId, conversations[0]?.id || '')
-    )
-    .orderBy(asc(chatMessages.timestamp));
-
   // Get all messages for all conversations
   const allMessages = await Promise.all(
     conversations.map(async (conv) => {
@@ -123,8 +115,16 @@ export default async function ReplayPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-            <div className="text-sm text-gray-500">
-              Started: {session.startedAt.toLocaleString()}
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-500">
+                Started: {session.startedAt.toLocaleString()}
+              </div>
+              <Link
+                href={`/instructor/summary/${session.id}`}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+              >
+                Summary
+              </Link>
             </div>
           </div>
         </div>

@@ -15,6 +15,8 @@ interface Conversation {
 interface ChatPanelProps {
   sessionId: string;
   assignmentId: string;
+  isOpen: boolean;
+  onToggle: (isOpen: boolean) => void;
 }
 
 interface Message {
@@ -23,7 +25,7 @@ interface Message {
   content: string;
 }
 
-export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
+export default function ChatPanel({ sessionId, assignmentId, isOpen, onToggle }: ChatPanelProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
@@ -317,7 +319,7 @@ export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       <Toaster
         toastOptions={{
           className: '',
@@ -326,56 +328,74 @@ export default function ChatPanel({ sessionId, assignmentId }: ChatPanelProps) {
           },
         }}
       />
-      {/* Header with New Conversation button */}
-      <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">AI Assistant</h3>
-        <button
-          onClick={createNewConversation}
-          disabled={isCreatingConversation}
-          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:bg-gray-400 text-xs font-medium"
-        >
-          {isCreatingConversation ? '...' : '+ New'}
-        </button>
-      </div>
 
-      {/* Conversation List (collapsible) */}
-      {conversations.length > 1 && (
-        <ConversationList
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={setActiveConversationId}
-          onUpdateTitle={updateConversationTitle}
-          onDeleteConversation={deleteConversation}
-        />
-      )}
+      {/* Chat panel - always rendered for smooth animation */}
+      <div className="flex flex-col h-full bg-white">
+        {/* Header with New Conversation and Close buttons */}
+        <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={createNewConversation}
+              disabled={isCreatingConversation}
+              className="text-gray-600 hover:text-gray-900 disabled:text-gray-400"
+              title="New conversation"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => onToggle(false)}
+              className="text-gray-600 hover:text-gray-900"
+              title="Close chat"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      {/* Chat Messages */}
-      <ChatMessages
-        messages={messages}
-        isLoading={isLoading}
-      />
-
-      {/* Input */}
-      <div className="border-t border-gray-200 p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask for help with your essay..."
-            disabled={!activeConversationId || isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm"
+        {/* Conversation List (collapsible) */}
+        {conversations.length > 1 && (
+          <ConversationList
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelectConversation={setActiveConversationId}
+            onUpdateTitle={updateConversationTitle}
+            onDeleteConversation={deleteConversation}
           />
-          <button
-            type="submit"
-            disabled={!input.trim() || isLoading || !activeConversationId}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
-          >
-            Send
-          </button>
-        </form>
+        )}
+
+        {/* Chat Messages */}
+        <ChatMessages
+          messages={messages}
+          isLoading={isLoading}
+        />
+
+        {/* Input */}
+        <div className="border-t border-gray-200 p-4">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask for help with your essay..."
+              disabled={!activeConversationId || isLoading}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isLoading || !activeConversationId}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm font-medium"
+            >
+              Send
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

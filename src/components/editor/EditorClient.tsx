@@ -17,6 +17,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
   const [chatWidth, setChatWidth] = useState(480); // Default 480px (larger chat width)
   const [isResizing, setIsResizing] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   // Listen for save events
   useEffect(() => {
@@ -115,16 +116,40 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
           </div>
         </div>
 
-        {/* Resize Handle */}
-        <div
-          className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize transition-colors"
-          onMouseDown={() => setIsResizing(true)}
-        />
+        {/* Resize Handle - only show when chat is open */}
+        {isChatOpen && (
+          <div
+            className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize transition-colors"
+            onMouseDown={() => setIsResizing(true)}
+          />
+        )}
 
-        {/* Chat (Right) */}
-        <div className="bg-gray-50" style={{ width: `${chatWidth}px` }}>
-          <ChatPanel sessionId={sessionId} assignmentId={assignmentId} />
-        </div>
+        {/* Chat (Right) - only show when open */}
+        {isChatOpen && (
+          <div className="bg-gray-50" style={{ width: `${chatWidth}px` }}>
+            <ChatPanel
+              sessionId={sessionId}
+              assignmentId={assignmentId}
+              isOpen={isChatOpen}
+              onToggle={setIsChatOpen}
+            />
+          </div>
+        )}
+
+        {/* Floating chat button when closed */}
+        {!isChatOpen && (
+          <div className="fixed top-1/2 right-0 -translate-y-1/2 z-50">
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="bg-blue-600 text-white px-3 py-6 rounded-l-lg shadow-lg hover:px-4 transition-all duration-300 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              <span className="text-xs font-medium">AI</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

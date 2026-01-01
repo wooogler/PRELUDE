@@ -224,10 +224,10 @@ export default async function AssignmentDetailPage({ params }: PageProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-3">
                         <Link
-                          href={`/instructor/view/${student.id}`}
+                          href={`/instructor/summary/${student.id}`}
                           className="text-blue-600 hover:text-blue-800 font-medium"
                         >
-                          View
+                          Summary
                         </Link>
                         <Link
                           href={`/instructor/replay/${student.id}`}
