@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@headlessui/react';
 
 interface Conversation {
   id: string;
@@ -47,7 +48,7 @@ export default function ConversationList({
   return (
     <div className="border-b border-gray-200">
       {/* Toggle button */}
-      <button
+      <Button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50 text-sm"
       >
@@ -55,7 +56,7 @@ export default function ConversationList({
           {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
         </span>
         <span className="text-gray-400">{isExpanded ? '▼' : '▶'}</span>
-      </button>
+      </Button>
 
       {/* Conversation list (collapsible) */}
       {isExpanded && (
@@ -88,18 +89,18 @@ export default function ConversationList({
                       autoFocus
                     />
                     <div className="flex gap-1">
-                      <button
+                      <Button
                         onClick={() => saveTitle(conv.id)}
                         className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
                       >
                         Save
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={cancelEditing}
                         className="text-xs bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -110,7 +111,7 @@ export default function ConversationList({
                       </p>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
-                      <button
+                      <Button
                         onClick={(e) => {
                           e.stopPropagation();
                           startEditing(conv);
@@ -119,8 +120,8 @@ export default function ConversationList({
                         title="Edit title"
                       >
                         ✎
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={(e) => {
                           e.stopPropagation();
                           onDeleteConversation(conv.id);
@@ -129,7 +130,7 @@ export default function ConversationList({
                         title="Delete conversation"
                       >
                         🗑
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

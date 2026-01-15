@@ -74,8 +74,6 @@ export class EventTracker {
       sequenceNumber: this.sequenceNumber++,
       data: documentState,
     });
-
-    this.scheduleSave();
   }
 
   trackPaste(content: string, isInternal: boolean) {

@@ -4,6 +4,7 @@ import { eq, and, asc } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import ReplayClient from './ReplayClient';
 
 async function getInstructor() {
@@ -116,15 +117,10 @@ export default async function ReplayPage({ params }: PageProps) {
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link
-                href={`/instructor/assignments/${assignment.id}`}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                ← Back
-              </Link>
+              <BackLink href={`/instructor/assignments/${assignment.id}`} label="Back" />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">
-                  Replay: {session.studentName}
+                  Replay: {session.studentLastName}, {session.studentFirstName}
                 </h1>
                 <p className="text-sm text-gray-600">
                   {assignment.title} • {session.studentEmail}

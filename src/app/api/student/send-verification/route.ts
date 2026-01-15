@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           await sendStudentVerificationEmail({
             to: email,
             magicLink,
-            studentName: session.studentName,
+            studentName: `${session.studentFirstName} ${session.studentLastName}`,
           });
           console.log('✅ 이메일 발송 성공!');
         } catch (error) {
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       await sendStudentVerificationEmail({
         to: email,
         magicLink,
-        studentName: session.studentName,
+        studentName: `${session.studentFirstName} ${session.studentLastName}`,
       });
     }
 

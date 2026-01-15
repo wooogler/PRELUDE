@@ -3,8 +3,9 @@ import { instructors } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import DeleteAccountButton from '@/app/instructor/settings/DeleteAccountButton';
+import { Button } from '@headlessui/react';
 
 async function getStudent() {
   const cookieStore = await cookies();
@@ -42,19 +43,14 @@ export default async function StudentSettingsPage() {
               <p className="text-sm text-gray-600">Student Settings</p>
             </div>
             <div className="flex items-center gap-4">
-              <Link
-                href="/student/dashboard"
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                ← Back to Dashboard
-              </Link>
+              <BackLink href="/student/dashboard" label="Back to Dashboard" />
               <form action="/api/auth/logout" method="POST">
-                <button
+                <Button
                   type="submit"
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm text-red-600 hover:text-red-800 font-medium"
                 >
                   Logout
-                </button>
+                </Button>
               </form>
             </div>
           </div>
@@ -72,10 +68,10 @@ export default async function StudentSettingsPage() {
                 <label className="text-sm font-medium text-gray-500">Email</label>
                 <p className="text-gray-900">{student.email}</p>
               </div>
-              {student.name && (
+              {(student.firstName || student.lastName) && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Name</label>
-                  <p className="text-gray-900">{student.name}</p>
+                  <p className="text-gray-900">{`${student.firstName || ''} ${student.lastName || ''}`.trim()}</p>
                 </div>
               )}
               <div>

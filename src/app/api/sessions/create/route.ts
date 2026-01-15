@@ -6,7 +6,8 @@ import { z } from 'zod';
 
 const createSessionSchema = z.object({
   assignmentId: z.string().uuid(),
-  studentName: z.string().min(1).max(100),
+  studentFirstName: z.string().min(1).max(100),
+  studentLastName: z.string().min(1).max(100),
   studentEmail: z.string().email(),
 });
 
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
       await db.insert(studentSessions).values({
         id: sessionId,
         assignmentId: validated.assignmentId,
-        studentName: validated.studentName,
+        studentFirstName: validated.studentFirstName,
+        studentLastName: validated.studentLastName,
         studentEmail: validated.studentEmail,
         isVerified: false,
         startedAt: new Date(),

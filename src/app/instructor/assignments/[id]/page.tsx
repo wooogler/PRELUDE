@@ -4,9 +4,9 @@ import { eq, desc, count, and } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import DeleteAssignmentButton from './DeleteAssignmentButton';
-import DeleteStudentSessionButton from './DeleteStudentSessionButton';
-import CopyLinkButton from '@/components/instructor/CopyLinkButton';
+import AssignmentTabs from './AssignmentTabs';
 
 async function getInstructor() {
   const cookieStore = await cookies();
@@ -62,14 +62,15 @@ export default async function AssignmentDetailPage({ params }: PageProps) {
   const students = await db
     .select({
       id: studentSessions.id,
-      studentName: studentSessions.studentName,
+      studentFirstName: studentSessions.studentFirstName,
+      studentLastName: studentSessions.studentLastName,
       studentEmail: studentSessions.studentEmail,
       startedAt: studentSessions.startedAt,
       lastSavedAt: studentSessions.lastSavedAt,
     })
     .from(studentSessions)
     .where(eq(studentSessions.assignmentId, id))
-    .orderBy(desc(studentSessions.startedAt));
+    .orderBy(studentSessions.studentLastName, studentSessions.studentFirstName);
 
   // Get event statistics for each student
   const studentsWithStats = await Promise.all(
@@ -111,12 +112,7 @@ export default async function AssignmentDetailPage({ params }: PageProps) {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Link
-              href="/instructor/dashboard"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ← Back
-            </Link>
+            <BackLink href="/instructor/dashboard" label="Back" />
             <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-900">{assignment.title}</h1>
               <p className={`text-sm ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
@@ -139,129 +135,11 @@ export default async function AssignmentDetailPage({ params }: PageProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Assignment Info */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Assignment Details</h2>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Share Link</h3>
-              <div className="flex items-center gap-2">
-                <code className="text-sm bg-gray-100 px-2 py-1 rounded">{shareUrl}</code>
-                <CopyLinkButton url={shareUrl} />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Students</h3>
-              <p className="text-gray-900">{studentsWithStats.length} student{studentsWithStats.length !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Instructions</h3>
-            <p className="text-gray-900 whitespace-pre-wrap">{assignment.instructions}</p>
-          </div>
-
-          {assignment.customSystemPrompt && (
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Custom System Prompt</h3>
-              <p className="text-gray-700 bg-gray-50 p-3 rounded text-sm">{assignment.customSystemPrompt}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Students Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Student Progress</h2>
-          </div>
-
-          {studentsWithStats.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-gray-500">No students have started yet</p>
-            </div>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Started
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Active
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submissions
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pastes
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {studentsWithStats.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{student.studentName}</div>
-                      <div className="text-sm text-gray-500">{student.studentEmail}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {new Date(student.startedAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {student.lastSavedAt
-                        ? new Date(student.lastSavedAt).toLocaleString()
-                        : '-'
-                      }
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.stats.submissions}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-green-600">
-                          {student.stats.pasteInternal} internal
-                        </span>
-                        {student.stats.pasteExternal > 0 && (
-                          <span className="text-sm text-red-600 font-medium">
-                            {student.stats.pasteExternal} external
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <div className="flex items-center justify-end gap-3">
-                        <Link
-                          href={`/instructor/summary/${student.id}`}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Summary
-                        </Link>
-                        <Link
-                          href={`/instructor/replay/${student.id}`}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          Replay
-                        </Link>
-                        <DeleteStudentSessionButton
-                          sessionId={student.id}
-                          studentName={student.studentName}
-                          assignmentId={id}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <AssignmentTabs
+          assignment={assignment}
+          students={studentsWithStats}
+          shareUrl={shareUrl}
+        />
       </main>
     </div>
   );

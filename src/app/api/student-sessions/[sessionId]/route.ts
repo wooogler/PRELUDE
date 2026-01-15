@@ -54,7 +54,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    console.log(`🗑️  Deleting student session: ${session.studentName} (${session.studentEmail})`);
+    console.log(`🗑️  Deleting student session: ${session.studentLastName}, ${session.studentFirstName} (${session.studentEmail})`);
 
     // Get conversations for this session
     const conversations = await db
@@ -76,7 +76,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     // Delete student session
     await db.delete(studentSessions).where(eq(studentSessions.id, sessionId));
 
-    console.log(`✅ Student session deleted: ${session.studentName}`);
+    console.log(`✅ Student session deleted: ${session.studentLastName}, ${session.studentFirstName}`);
 
     return NextResponse.json({ success: true });
   } catch (error) {

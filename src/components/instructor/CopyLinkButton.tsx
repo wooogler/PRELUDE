@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@headlessui/react';
 
 interface CopyLinkButtonProps {
   url: string;
@@ -21,12 +22,12 @@ export default function CopyLinkButton({ url, className = '' }: CopyLinkButtonPr
   }
 
   return (
-    <button
+    <Button
       onClick={handleCopy}
-      className={`text-sm text-blue-600 hover:text-blue-800 ${className}`}
+      className={`text-sm text-blue-600 hover:text-blue-800 font-medium ${className}`}
       title={url}
     >
       {copied ? 'Copied!' : 'Copy Link'}
-    </button>
+    </Button>
   );
 }

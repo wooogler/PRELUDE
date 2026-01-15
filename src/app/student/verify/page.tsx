@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@headlessui/react';
 
 function StudentVerifyContent() {
   const router = useRouter();
@@ -175,13 +176,13 @@ function StudentVerifyContent() {
                   </div>
                 )}
 
-                <button
+                <Button
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {isSubmitting ? 'Setting Password...' : 'Set Password & Continue'}
-                </button>
+                </Button>
               </form>
             </div>
           )}

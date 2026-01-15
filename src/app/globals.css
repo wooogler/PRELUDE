@@ -19,6 +19,63 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@layer components {
+  /* Primary button - main actions */
+  .btn-primary {
+    @apply px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors;
+  }
+
+  /* Primary button - full width variant for forms */
+  .btn-primary-lg {
+    @apply w-full py-3 px-4 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors;
+  }
+
+  /* Secondary button - outlined style */
+  .btn-secondary {
+    @apply px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 font-medium transition-colors;
+  }
+
+  /* Secondary button - small variant */
+  .btn-secondary-sm {
+    @apply px-3 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium transition-colors;
+  }
+
+  /* Destructive button - for delete actions */
+  .btn-destructive {
+    @apply px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors;
+  }
+
+  /* Destructive button - small variant */
+  .btn-destructive-sm {
+    @apply px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 font-medium transition-colors;
+  }
+
+  /* Destructive button - outlined variant */
+  .btn-destructive-outline {
+    @apply px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 font-medium transition-colors;
+  }
+
+  /* Ghost/Link button - minimal style */
+  .btn-ghost {
+    @apply text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors;
+  }
+
+  /* Ghost button - destructive variant */
+  .btn-ghost-destructive {
+    @apply text-sm text-red-600 hover:text-red-800 font-medium transition-colors;
+  }
+
+  /* Success button - for submit/confirm actions */
+  .btn-success {
+    @apply px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium transition-colors;
+  }
+
+  /* Icon button - no specific sizing, just hover styles */
+  .btn-icon {
+    @apply text-gray-600 hover:text-gray-900 disabled:text-gray-400 font-medium transition-colors;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

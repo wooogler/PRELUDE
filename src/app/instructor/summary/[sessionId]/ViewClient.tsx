@@ -60,7 +60,12 @@ export default function ViewClient({ finalDocument, submissions }: ViewClientPro
               </span>
               <Listbox
                 value={selectedSubmission}
-                onChange={(submission) => setSelectedSubmissionId(submission.id)}
+                onChange={(submission) => {
+                  if (!submission) {
+                    return;
+                  }
+                  setSelectedSubmissionId(submission.id);
+                }}
               >
                 <div className="relative">
                   <ListboxButton className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-700 min-w-[260px] text-left flex items-center justify-between gap-2">

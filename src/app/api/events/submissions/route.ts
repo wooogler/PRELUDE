@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { editorEvents } from '@/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
 const submissionsSchema = z.object({
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         eq(editorEvents.sessionId, validated.sessionId),
         eq(editorEvents.eventType, 'submission')
       ))
-      .orderBy(asc(editorEvents.sequenceNumber));
+      .orderBy(asc(editorEvents.timestamp), asc(editorEvents.sequenceNumber));
 
     return NextResponse.json({ submissions }, { status: 200 });
   } catch (error) {

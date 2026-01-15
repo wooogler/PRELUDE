@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@headlessui/react';
 
 interface DeleteAssignmentButtonProps {
   assignmentId: string;
@@ -38,29 +39,29 @@ export default function DeleteAssignmentButton({ assignmentId }: DeleteAssignmen
     return (
       <div className="flex items-center gap-2">
         <span className="text-sm text-red-600">Delete this assignment?</span>
-        <button
+        <Button
           onClick={handleDelete}
           disabled={isDeleting}
-          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+          className="btn-destructive-sm"
         >
           {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setShowConfirm(false)}
-          className="px-3 py-1 text-gray-600 text-sm hover:text-gray-800"
+          className="btn-ghost px-3 py-1 text-gray-600 hover:text-gray-800"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <button
+    <Button
       onClick={() => setShowConfirm(true)}
-      className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
+      className="btn-destructive-outline"
     >
       Delete
-    </button>
+    </Button>
   );
 }

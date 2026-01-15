@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@headlessui/react';
 
 interface DeleteStudentSessionButtonProps {
   sessionId: string;
@@ -48,13 +49,13 @@ export default function DeleteStudentSessionButton({
   }
 
   return (
-    <button
+    <Button
       onClick={handleDelete}
       disabled={isDeleting}
-      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
     >
       {isDeleting ? 'Deleting...' : 'Delete'}
-    </button>
+    </Button>
   );
 }
 

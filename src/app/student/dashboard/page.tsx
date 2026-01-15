@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import JoinAssignmentForm from '@/components/student/JoinAssignmentForm';
+import { Button } from '@headlessui/react';
 
 async function getStudent() {
   const cookieStore = await cookies();
@@ -91,12 +92,12 @@ export default async function StudentDashboardPage() {
                 Settings
               </Link>
               <form action="/api/auth/logout" method="POST">
-                <button
+                <Button
                   type="submit"
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm text-red-600 hover:text-red-800 font-medium"
                 >
                   Logout
-                </button>
+                </Button>
               </form>
             </div>
           </div>

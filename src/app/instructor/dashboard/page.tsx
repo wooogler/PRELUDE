@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import CopyLinkButton from '@/components/instructor/CopyLinkButton';
+import { Button } from '@headlessui/react';
 
 async function getInstructor() {
   const cookieStore = await cookies();
@@ -86,12 +87,12 @@ export default async function DashboardPage() {
                 Settings
               </Link>
               <form action="/api/auth/logout" method="POST">
-                <button
+                <Button
                   type="submit"
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm text-red-600 hover:text-red-800 font-medium"
                 >
                   Logout
-                </button>
+                </Button>
               </form>
             </div>
           </div>

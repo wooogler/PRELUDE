@@ -5,7 +5,8 @@ export const instructors = pgTable('instructors', {
   id: text('id').primaryKey(),
   email: text('email').unique().notNull(),
   password: text('password'), // Hashed password (null if not verified yet)
-  name: text('name'),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
   role: text('role').notNull().default('instructor'), // 'instructor' | 'student'
   isVerified: boolean('is_verified').default(false).notNull(),
   createdAt: timestamp('created_at').notNull(),
@@ -44,7 +45,8 @@ export const studentSessions = pgTable('student_sessions', {
   id: text('id').primaryKey(),
   assignmentId: text('assignment_id').notNull().references(() => assignments.id),
   userId: text('user_id').references(() => instructors.id),
-  studentName: text('student_name').notNull(),
+  studentFirstName: text('student_first_name').notNull(),
+  studentLastName: text('student_last_name').notNull(),
   studentEmail: text('student_email').notNull(),
   password: text('password'), // Hashed password (null if not verified yet)
   isVerified: boolean('is_verified').default(false).notNull(),

@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Dialog, Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react';
+import { Dialog, Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition, Button } from '@headlessui/react';
 
 const SubmissionPreview = dynamic(() => import('./SubmissionPreview'), {
   ssr: false,
@@ -34,7 +34,14 @@ export default function SubmissionModal({
   onClose,
 }: SubmissionModalProps) {
   const sortedSubmissions = useMemo(
-    () => [...submissions].sort((a, b) => a.sequenceNumber - b.sequenceNumber),
+    () =>
+      [...submissions].sort((a, b) => {
+        const timeDiff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        if (timeDiff !== 0) {
+          return timeDiff;
+        }
+        return a.sequenceNumber - b.sequenceNumber;
+      }),
     [submissions]
   );
 
@@ -129,12 +136,25 @@ export default function SubmissionModal({
                   </ListboxOptions>
                 </div>
               </Listbox>
-              <button
-                className="ml-2 px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+              <Button
+                className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 onClick={onClose}
+                aria-label="Close"
               >
-                Close
-              </button>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </Button>
             </div>
           </div>
 

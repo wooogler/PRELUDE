@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import TrackedEditor from './TrackedEditor';
 import ChatPanel from '../chat/ChatPanel';
 import { useUIStore } from '@/stores/uiStore';
 import SubmissionModal from './SubmissionModal';
+import { Button } from '@headlessui/react';
 
 interface EditorClientProps {
   sessionId: string;
@@ -39,6 +40,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
   }>>([]);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<number | null>(null);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+  const [hasChangesAfterSubmit, setHasChangesAfterSubmit] = useState(false);
 
   // Listen for save events
   useEffect(() => {
@@ -85,6 +87,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
   // Open submission modal after a successful submission
   useEffect(() => {
     const handleSubmissionSaved = () => {
+      setHasChangesAfterSubmit(false);
       loadSubmissions()
         .then(() => setIsSubmissionModalOpen(true))
         .catch(() => {
@@ -97,6 +100,18 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
       window.removeEventListener('prelude:submission-saved', handleSubmissionSaved);
     };
   }, [loadSubmissions]);
+
+  // Listen for editor changes to enable submit button
+  useEffect(() => {
+    const handleEditorChange = () => {
+      setHasChangesAfterSubmit(true);
+    };
+
+    window.addEventListener('prelude:editor-changed', handleEditorChange);
+    return () => {
+      window.removeEventListener('prelude:editor-changed', handleEditorChange);
+    };
+  }, []);
 
   const handleOpenSubmissions = () => {
     loadSubmissions()
@@ -127,53 +142,53 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              {assignmentTitle}
-            </h1>
-            <div className="flex items-center gap-3 mt-1">
-              <p className="text-sm text-gray-600">
-                Due: {deadline.toLocaleDateString()}
-              </p>
-              <span className="text-gray-400">•</span>
-              <button
-                onClick={toggleInstructions}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                {showInstructions ? 'Hide Instructions' : 'View Instructions'}
-              </button>
+          <div className="flex items-center gap-4">
+            <BackLink href="/student/dashboard" label="Dashboard" />
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">
+                {assignmentTitle}
+              </h1>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-sm text-gray-600">
+                  Due: {deadline.toLocaleDateString()}
+                </p>
+                <span className="text-gray-400">•</span>
+                <Button
+                  onClick={toggleInstructions}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {showInstructions ? 'Hide Instructions' : 'View Instructions'}
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className={`text-sm font-medium ${
-              saveStatus === 'saving' ? 'text-blue-600' : 
-              saveStatus === 'saved' ? 'text-green-600' : 
-              'text-gray-500'
-            }`}>
-              {saveStatus === 'saving' ? '💾 Saving...' : 
-               saveStatus === 'saved' ? '✓ Saved' : 
-               'Ready'}
-            </span>
-            <Link
-              href="/student/dashboard"
-              className="px-3 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-            >
-              Dashboard
-            </Link>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('prelude:submit-request'))}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
-              title="You can resubmit anytime before the deadline"
-            >
-              Submit
-            </button>
-            <button
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span className={`font-medium ${
+                saveStatus === 'saving' ? 'text-blue-600' : 
+                saveStatus === 'saved' ? 'text-green-600' : 
+                'text-gray-500'
+              }`}>
+                {saveStatus === 'saving' ? '💾 Saving...' : 
+                 saveStatus === 'saved' ? '✓ Saved' : 
+                 'Ready'}
+              </span>
+            </div>
+            <Button
               onClick={handleOpenSubmissions}
-              className="px-3 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
+              className="btn-secondary-sm"
               title="View previous submissions"
             >
               Submissions
-            </button>
+            </Button>
+            <Button
+              onClick={() => window.dispatchEvent(new CustomEvent('prelude:submit-request'))}
+              className={hasChangesAfterSubmit ? "btn-success" : "btn-success opacity-50 cursor-not-allowed"}
+              disabled={!hasChangesAfterSubmit}
+              title={hasChangesAfterSubmit ? "You can resubmit anytime before the deadline" : "No changes since last submission"}
+            >
+              {hasChangesAfterSubmit ? 'Submit' : 'Submitted'}
+            </Button>
           </div>
         </div>
       </header>
@@ -228,7 +243,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
         {/* Floating chat button when closed */}
         {!isChatOpen && (
           <div className="fixed top-1/2 right-0 -translate-y-1/2 z-50">
-            <button
+            <Button
               onClick={() => setChatOpen(true)}
               className="bg-blue-600 text-white px-3 py-6 rounded-l-lg shadow-lg hover:px-4 transition-all duration-300 flex items-center gap-2"
             >
@@ -236,7 +251,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <span className="text-xs font-medium">AI</span>
-            </button>
+            </Button>
           </div>
         )}
       </div>

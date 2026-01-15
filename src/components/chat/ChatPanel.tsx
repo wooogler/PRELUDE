@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useMemo } from 'react';
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Button } from '@headlessui/react';
 import { getGlobalValidator } from '@/lib/copy-validator';
 import toast, { Toaster } from 'react-hot-toast';
 import ConversationList from './ConversationList';
@@ -213,7 +213,7 @@ export default function ChatPanel({
           <div className="flex items-center gap-2">
             {/* New conversation button - only show in live mode */}
             {!isReplayMode && (
-              <button
+              <Button
                 onClick={handleCreateConversation}
                 disabled={isCreatingConversation}
                 className="text-gray-600 hover:text-gray-900 disabled:text-gray-400"
@@ -222,9 +222,9 @@ export default function ChatPanel({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               onClick={() => onToggle(false)}
               className="text-gray-600 hover:text-gray-900"
               title="Close chat"
@@ -232,7 +232,7 @@ export default function ChatPanel({
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -354,7 +354,7 @@ export default function ChatPanel({
                 <div className="flex items-center justify-between">
                   {/* Web Search Toggle - Ghost style (only show if allowed by instructor) */}
                   {allowWebSearch ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={toggleWebSearch}
                       className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
@@ -367,13 +367,13 @@ export default function ChatPanel({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 919-9" />
                       </svg>
                       <span>Web search</span>
-                    </button>
+                    </Button>
                   ) : (
                     <div />
                   )}
 
                   {/* Send Button - Circular */}
-                  <button
+                  <Button
                     type="submit"
                     disabled={!input.trim() || isLoading || !activeConversationId}
                     className={`p-2 rounded-full transition-colors ${
@@ -385,7 +385,7 @@ export default function ChatPanel({
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     </svg>
-                  </button>
+                  </Button>
                 </div>
               </div>
             </form>

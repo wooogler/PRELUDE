@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@headlessui/react';
 
 export default function JoinAssignmentForm() {
   const router = useRouter();
@@ -66,13 +67,13 @@ export default function JoinAssignmentForm() {
           {error}
         </div>
       )}
-      <button
+      <Button
         type="submit"
         disabled={isJoining}
         className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
       >
         {isJoining ? 'Joining...' : 'Join Assignment'}
-      </button>
+      </Button>
     </form>
   );
 }

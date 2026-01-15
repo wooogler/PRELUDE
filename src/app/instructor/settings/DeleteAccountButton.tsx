@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@headlessui/react';
 
 interface DeleteAccountButtonProps {
   instructorId: string;
@@ -57,23 +58,23 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
             className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-3"
           />
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={handleDelete}
               disabled={isDeleting || confirmText !== 'DELETE'}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isDeleting ? 'Deleting...' : 'Delete My Account'}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setShowConfirm(false);
                 setConfirmText('');
               }}
               disabled={isDeleting}
-              className="px-4 py-2 text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -81,12 +82,12 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
   }
 
   return (
-    <button
+    <Button
       onClick={() => setShowConfirm(true)}
       className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
     >
       Delete Account
-    </button>
+    </Button>
   );
 }
 

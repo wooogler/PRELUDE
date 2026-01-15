@@ -3,11 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
+import { Button } from '@headlessui/react';
+import InstructionEditor from '@/components/editor/InstructionEditor';
 
 export default function NewAssignmentPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState<string>('');
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -17,7 +21,7 @@ export default function NewAssignmentPage() {
     const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get('title') as string,
-      instructions: formData.get('instructions') as string,
+      instructions: instructions, // Use state value from editor
       deadline: formData.get('deadline') as string,
       customSystemPrompt: formData.get('customSystemPrompt') as string || null,
       includeInstructionInPrompt: formData.get('includeInstructionInPrompt') === 'on',
@@ -60,12 +64,7 @@ export default function NewAssignmentPage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Link
-              href="/instructor/dashboard"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ← Back
-            </Link>
+            <BackLink href="/instructor/dashboard" label="Back" />
             <h1 className="text-xl font-bold text-gray-900">New Assignment</h1>
           </div>
         </div>
@@ -73,7 +72,7 @@ export default function NewAssignmentPage() {
 
       {/* Form */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
@@ -97,19 +96,16 @@ export default function NewAssignmentPage() {
 
           {/* Instructions */}
           <div>
-            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Instructions *
             </label>
-            <textarea
-              id="instructions"
-              name="instructions"
-              required
-              rows={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Provide detailed instructions for the assignment..."
+            <InstructionEditor
+              initialContent=""
+              onChange={setInstructions}
+              editable={true}
             />
-            <p className="mt-1 text-sm text-gray-500">
-              These instructions will be shown to students when they start the assignment.
+            <p className="mt-1 text-xs text-gray-500">
+              Use Markdown formatting: **bold**, *italic*, # headings, - lists, etc.
             </p>
           </div>
 
@@ -142,7 +138,7 @@ export default function NewAssignmentPage() {
                   name="customSystemPrompt"
                   rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., You are a helpful writing assistant that helps students improve their essays without writing for them..."
+                  placeholder="You are a helpful writing assistant for students. Help them brainstorm ideas, structure their essays, and improve their writing. Encourage critical thinking and original work."
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   Leave empty to use the default system prompt.
@@ -198,13 +194,13 @@ export default function NewAssignmentPage() {
             >
               Cancel
             </Link>
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="btn-primary"
             >
               {isSubmitting ? 'Creating...' : 'Create Assignment'}
-            </button>
+            </Button>
           </div>
         </form>
       </main>

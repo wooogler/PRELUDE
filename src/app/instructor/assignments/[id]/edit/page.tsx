@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
+import { Button } from '@headlessui/react';
+import DeleteAssignmentButton from '../DeleteAssignmentButton';
+import InstructionEditor from '@/components/editor/InstructionEditor';
 
 interface Assignment {
   id: string;
@@ -23,6 +27,7 @@ export default function EditAssignmentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState<string>('');
 
   useEffect(() => {
     async function fetchAssignment() {
@@ -37,6 +42,7 @@ export default function EditAssignmentPage() {
         }
         const data = await res.json();
         setAssignment(data);
+        setInstructions(data.instructions || '');
       } catch (err) {
         setError('Failed to load assignment');
       } finally {
@@ -55,7 +61,7 @@ export default function EditAssignmentPage() {
     const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get('title') as string,
-      instructions: formData.get('instructions') as string,
+      instructions: instructions, // Use state value from editor
       deadline: formData.get('deadline') as string,
       customSystemPrompt: formData.get('customSystemPrompt') as string || null,
       includeInstructionInPrompt: formData.get('includeInstructionInPrompt') === 'on',
@@ -107,12 +113,7 @@ export default function EditAssignmentPage() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <Link
-              href={`/instructor/assignments/${assignmentId}`}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              ← Back
-            </Link>
+            <BackLink href={`/instructor/assignments/${assignmentId}`} label="Back" />
             <h1 className="text-xl font-bold text-gray-900">Edit Assignment</h1>
           </div>
         </div>
@@ -120,7 +121,7 @@ export default function EditAssignmentPage() {
 
       {/* Form */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
@@ -144,17 +145,17 @@ export default function EditAssignmentPage() {
 
           {/* Instructions */}
           <div>
-            <label htmlFor="instructions" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Instructions *
             </label>
-            <textarea
-              id="instructions"
-              name="instructions"
-              required
-              rows={6}
-              defaultValue={assignment.instructions}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <InstructionEditor
+              initialContent={assignment.instructions}
+              onChange={setInstructions}
+              editable={true}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Use Markdown formatting: **bold**, *italic*, # headings, - lists, etc.
+            </p>
           </div>
 
           {/* Deadline */}
@@ -231,20 +232,23 @@ export default function EditAssignmentPage() {
           </div>
 
           {/* Submit */}
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
-            <Link
-              href={`/instructor/assignments/${assignmentId}`}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </button>
+          <div className="flex justify-between pt-6 border-t border-gray-200">
+            <DeleteAssignmentButton assignmentId={assignmentId} />
+            <div className="flex gap-4">
+              <Link
+                href={`/instructor/assignments/${assignmentId}`}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+              >
+                Cancel
+              </Link>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
           </div>
         </form>
       </main>

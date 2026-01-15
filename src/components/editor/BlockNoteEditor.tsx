@@ -166,6 +166,9 @@ export default function BlockNoteEditor({ sessionId }: BlockNoteEditorProps) {
       // Track activity (throttled to 1 per second)
       tracker.trackActivity();
 
+      // Notify that editor has changed (for submit button state)
+      window.dispatchEvent(new CustomEvent('prelude:editor-changed'));
+
       // Take snapshot if needed (activity-based, every 5 seconds)
       if (tracker.shouldTakeSnapshot()) {
         try {

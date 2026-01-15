@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import dynamic from 'next/dynamic';
 
 const ViewClient = dynamic(() => import('./ViewClient'), {
@@ -10,7 +11,8 @@ const ViewClient = dynamic(() => import('./ViewClient'), {
 interface ViewWrapperProps {
   session: {
     id: string;
-    studentName: string;
+    studentFirstName: string;
+    studentLastName: string;
     studentEmail: string;
     startedAt: Date;
     lastSavedAt: Date | null;
@@ -51,15 +53,10 @@ export default function ViewWrapper({ session, assignment, stats, latestSnapshot
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link
-                href={`/instructor/assignments/${assignment.id}`}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                ← Back
-              </Link>
+              <BackLink href={`/instructor/assignments/${assignment.id}`} label="Back" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  {session.studentName}'s Submission
+                  {session.studentLastName}, {session.studentFirstName}'s Submission
                 </h1>
                 <p className="text-sm text-gray-600">
                   {assignment.title} • {session.studentEmail}

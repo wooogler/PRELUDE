@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getGlobalValidator } from '@/lib/copy-validator';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Button } from '@headlessui/react';
 
 interface Message {
   id: string | number;
@@ -181,7 +182,7 @@ export default function ChatMessages({
                   {/* Copy button - only show when enabled and not streaming */}
                   {enableCopy && !isStreaming && (
                     <div className="mt-2">
-                      <button
+                      <Button
                         onClick={() => copyToClipboard(message.content, message.id)}
                         className="text-gray-400 hover:text-gray-600 transition-colors text-xs flex items-center gap-1"
                         title="Copy message"
@@ -201,7 +202,7 @@ export default function ChatMessages({
                             <span>Copy</span>
                           </>
                         )}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

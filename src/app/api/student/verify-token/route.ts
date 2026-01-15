@@ -51,7 +51,8 @@ export async function POST(request: Request) {
       success: true,
       session: {
         id: session.id,
-        studentName: session.studentName,
+        studentFirstName: session.studentFirstName,
+        studentLastName: session.studentLastName,
         studentEmail: session.studentEmail,
       },
     });

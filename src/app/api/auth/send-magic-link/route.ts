@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { authTokens, instructors } from '@/db/schema';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
 const signupSchema = z.object({
   email: z.string().email(),
-  name: z.string().min(1).max(100).optional(),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
   passcode: z.string().optional(),
   shareToken: z.string().optional(),
 });
@@ -17,7 +19,7 @@ const ALLOWED_DOMAINS = process.env.ALLOWED_EMAIL_DOMAINS?.split(',') || ['vt.ed
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, name, passcode, shareToken } = signupSchema.parse(body);
+    const { email, firstName, lastName, passcode, shareToken } = signupSchema.parse(body);
 
     const trimmedPasscode = passcode?.trim();
     const instructorPasscode = process.env.INSTRUCTOR_PASSCODE;
@@ -25,12 +27,12 @@ export async function POST(request: Request) {
 
     if (trimmedPasscode) {
       // Instructor signup still enforces allowed domains
-      const domain = email.split('@')[1];
-      if (!ALLOWED_DOMAINS.includes(domain)) {
-        return NextResponse.json(
-          { error: `Only ${ALLOWED_DOMAINS.join(', ')} email addresses are allowed` },
-          { status: 403 }
-        );
+    const domain = email.split('@')[1];
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+      return NextResponse.json(
+        { error: `Only ${ALLOWED_DOMAINS.join(', ')} email addresses are allowed` },
+        { status: 403 }
+      );
       }
 
       if (!instructorPasscode || trimmedPasscode !== instructorPasscode) {
@@ -82,16 +84,20 @@ export async function POST(request: Request) {
       await db.insert(instructors).values({
         id: crypto.randomUUID(),
         email,
-        name: name ?? null,
+        firstName: firstName ?? null,
+        lastName: lastName ?? null,
         role,
         isVerified: false,
         createdAt: new Date(),
       });
-    } else if (name && !existingUser.name) {
+    } else if ((firstName || lastName) && (!existingUser.firstName || !existingUser.lastName)) {
       await db
         .update(instructors)
-        .set({ name })
-        .where((instructors, { eq }) => eq(instructors.id, existingUser.id));
+        .set({
+          firstName: firstName ?? existingUser.firstName,
+          lastName: lastName ?? existingUser.lastName,
+        })
+        .where(eq(instructors.id, existingUser.id));
     }
 
     // Build magic link URL
