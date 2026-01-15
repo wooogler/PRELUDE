@@ -127,7 +127,7 @@ export default async function SettingsPage() {
               Once you delete your account, there is no going back. This will permanently delete your account,
               all your assignments, and all student data.
             </p>
-            <DeleteAccountButton instructorId={instructor.id} />
+            <DeleteAccountButton />
           </div>
         </div>
       </main>

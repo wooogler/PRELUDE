@@ -8,10 +8,10 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
 interface ViewClientProps {
-  finalDocument: any[];
+  finalDocument: Record<string, unknown>[];
   submissions: Array<{
     id: number;
-    eventData: any;
+    eventData: Record<string, unknown>[];
     timestamp: Date | string;
     sequenceNumber: number;
   }>;

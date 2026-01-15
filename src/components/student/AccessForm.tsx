@@ -8,6 +8,16 @@ interface AccessFormProps {
   shareToken: string;
 }
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Check, Mail, AlertTriangle } from 'lucide-react';
+
+interface AccessFormProps {
+  assignmentId: string;
+  shareToken: string;
+}
+
 export default function AccessForm({ assignmentId, shareToken }: AccessFormProps) {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -136,213 +146,217 @@ export default function AccessForm({ assignmentId, shareToken }: AccessFormProps
 
   if (verificationSent) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-600 text-2xl">📧</div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              Check Your Email
-            </h3>
-            <p className="text-blue-800 mb-3">
-              We've sent a verification link to <strong>{email}</strong>
-            </p>
-            <p className="text-sm text-blue-700">
-              Click the link in the email to set your password and access the assignment.
-              The link will expire in 15 minutes.
-            </p>
+      <Card className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+              <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-2">
+                Check Your Email
+              </h3>
+              <p className="text-blue-800 dark:text-blue-200 mb-3">
+                We&apos;ve sent a verification link to <strong>{email}</strong>
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300/80">
+                Click the link in the email to set your password and access the assignment.
+                The link will expire in 15 minutes.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!isChecking && currentUser?.role === 'student') {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-        <div className="flex items-start gap-3">
-          <div className="text-green-600 text-2xl">✅</div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-green-900 mb-2">
-              Continue as {currentUser.name || currentUser.email}
-            </h3>
-            <p className="text-sm text-green-800 mb-4">
-              We'll start your session for this assignment.
-            </p>
-            {error && (
-              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg mb-3">
-                {error}
-              </div>
-            )}
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={async () => {
-                setError('');
-                setIsLoading(true);
-                try {
-                  await startSession();
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Failed to start session');
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {isLoading ? 'Starting...' : 'Start Assignment'}
-            </button>
+      <Card className="bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+              <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-green-900 dark:text-green-300 mb-2">
+                Continue as {currentUser.name || currentUser.email}
+              </h3>
+              <p className="text-sm text-green-800 dark:text-green-200 mb-4">
+                We&apos;ll start your session for this assignment.
+              </p>
+              {error && (
+                <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg mb-3">
+                  {error}
+                </div>
+              )}
+              <Button
+                type="button"
+                disabled={isLoading}
+                onClick={async () => {
+                  setError('');
+                  setIsLoading(true);
+                  try {
+                    await startSession();
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to start session');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isLoading ? 'Starting...' : 'Start Assignment'}
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!isChecking && currentUser?.role === 'instructor') {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <div className="flex items-start gap-3">
-          <div className="text-yellow-600 text-2xl">⚠️</div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-yellow-900 mb-2">
-              Instructor account detected
-            </h3>
-            <p className="text-sm text-yellow-800">
-              Please log out and sign in with a student account to access this assignment.
-            </p>
+      <Card className="bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
+              <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-300 mb-2">
+                Instructor account detected
+              </h3>
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                Please log out and sign in with a student account to access this assignment.
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div>
       {/* Toggle buttons */}
-      <div className="flex gap-2 mb-6">
-        <button
+      <div className="grid grid-cols-2 gap-2 mb-8 p-1 bg-[hsl(var(--muted))] rounded-lg">
+        <Button
           type="button"
+          variant={mode === 'login' ? 'primary' : 'ghost'}
+          size="sm"
           onClick={() => {
             setMode('login');
             setError('');
           }}
-          className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-            mode === 'login'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={mode === 'login' ? 'shadow-sm' : 'text-[hsl(var(--muted-foreground))]'}
         >
           Login
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant={mode === 'signup' ? 'primary' : 'ghost'}
+          size="sm"
           onClick={() => {
             setMode('signup');
             setError('');
           }}
-          className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-            mode === 'signup'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={mode === 'signup' ? 'shadow-sm' : 'text-[hsl(var(--muted-foreground))]'}
         >
           Sign Up
-        </button>
+        </Button>
       </div>
 
       {mode === 'login' ? (
         <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label htmlFor="login-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Email
             </label>
-            <input
+            <Input
               type="email"
               id="login-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="your.email@example.com"
             />
           </div>
 
-          <div>
-            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label htmlFor="login-password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Password
             </label>
-            <input
+            <Input
               type="password"
               id="login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Your password"
             />
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+            <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
               {error}
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full"
           >
             {isLoading ? 'Logging in...' : 'Login'}
-          </button>
+          </Button>
         </form>
       ) : (
         <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label htmlFor="signup-name" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label htmlFor="signup-name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Name
             </label>
-            <input
+            <Input
               type="text"
               id="signup-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter your full name"
             />
           </div>
 
-          <div>
-            <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <label htmlFor="signup-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Email
             </label>
-            <input
+            <Input
               type="email"
               id="signup-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="your.email@example.com"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              You'll receive a verification email to set your password
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              You&apos;ll receive a verification email to set your password
             </p>
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+            <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
               {error}
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full"
           >
             {isLoading ? 'Processing...' : 'Sign Up'}
-          </button>
+          </Button>
         </form>
       )}
     </div>

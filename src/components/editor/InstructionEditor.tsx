@@ -20,10 +20,12 @@ export default function InstructionEditor({
   const [editor, setEditor] = useState<BlockNoteEditor | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    let activeEditor: BlockNoteEditor | null = null;
+
     const initEditor = async () => {
-      const newEditor = BlockNoteEditor.create({
-        initialContent: initialContent ? undefined : undefined,
-      });
+      const newEditor = BlockNoteEditor.create();
+      activeEditor = newEditor;
 
       // Load initial markdown content
       if (initialContent) {
@@ -35,17 +37,22 @@ export default function InstructionEditor({
         }
       }
 
-      setEditor(newEditor);
+      if (isMounted) {
+        setEditor(newEditor);
+      } else {
+        newEditor._tiptapEditor.destroy();
+      }
     };
 
     initEditor();
 
     return () => {
-      if (editor) {
-        editor._tiptapEditor.destroy();
+      isMounted = false;
+      if (activeEditor) {
+        activeEditor._tiptapEditor.destroy();
       }
     };
-  }, []); // Only initialize once
+  }, [initialContent]);
 
   useEffect(() => {
     if (!editor || !onChange || !editable) return;

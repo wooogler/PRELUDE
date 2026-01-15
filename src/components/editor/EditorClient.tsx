@@ -6,7 +6,10 @@ import TrackedEditor from './TrackedEditor';
 import ChatPanel from '../chat/ChatPanel';
 import { useUIStore } from '@/stores/uiStore';
 import SubmissionModal from './SubmissionModal';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { FileText, History, Send, Bot, Check, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface EditorClientProps {
   sessionId: string;
@@ -34,7 +37,7 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
 
   const [submissions, setSubmissions] = useState<Array<{
     id: number;
-    eventData: any;
+    eventData: Record<string, unknown>[];
     timestamp: string | Date;
     sequenceNumber: number;
   }>>([]);
@@ -138,55 +141,71 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
   }, [isResizing, handleResize, stopResize]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-[hsl(var(--background))]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))] px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <BackLink href="/student/dashboard" label="Dashboard" />
+            <BackLink href="/student/dashboard" label="Dashboard" className="text-[hsl(var(--muted-foreground))]" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-[hsl(var(--foreground))]">
                 {assignmentTitle}
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   Due: {deadline.toLocaleDateString()}
                 </p>
-                <span className="text-gray-400">•</span>
+                <span className="text-[hsl(var(--border))]">•</span>
                 <Button
                   onClick={toggleInstructions}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 font-medium hover:bg-transparent"
                 >
+                  <FileText className="w-4 h-4 mr-1" />
                   {showInstructions ? 'Hide Instructions' : 'View Instructions'}
                 </Button>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className={`font-medium ${
-                saveStatus === 'saving' ? 'text-blue-600' : 
-                saveStatus === 'saved' ? 'text-green-600' : 
-                'text-gray-500'
-              }`}>
-                {saveStatus === 'saving' ? '💾 Saving...' : 
-                 saveStatus === 'saved' ? '✓ Saved' : 
-                 'Ready'}
+            <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))] mr-2">
+              <span className={`font-medium flex items-center gap-1.5 ${saveStatus === 'saving' ? 'text-[hsl(var(--primary))]' :
+                saveStatus === 'saved' ? 'text-green-600' :
+                  'text-[hsl(var(--muted-foreground))]'
+                }`}>
+                {saveStatus === 'saving' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Saved
+                  </>
+                ) : (
+                  'Ready'
+                )}
               </span>
             </div>
             <Button
               onClick={handleOpenSubmissions}
-              className="btn-secondary-sm"
+              variant="secondary"
+              size="sm"
               title="View previous submissions"
             >
+              <History className="w-4 h-4 mr-2" />
               Submissions
             </Button>
             <Button
               onClick={() => window.dispatchEvent(new CustomEvent('prelude:submit-request'))}
-              className={hasChangesAfterSubmit ? "btn-success" : "btn-success opacity-50 cursor-not-allowed"}
+              className={hasChangesAfterSubmit ? "" : "opacity-50 cursor-not-allowed"}
               disabled={!hasChangesAfterSubmit}
               title={hasChangesAfterSubmit ? "You can resubmit anytime before the deadline" : "No changes since last submission"}
+              size="sm"
             >
+              <Send className="w-4 h-4 mr-2" />
               {hasChangesAfterSubmit ? 'Submit' : 'Submitted'}
             </Button>
           </div>
@@ -196,15 +215,17 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Editor (Left) */}
-        <div className="flex-1 flex flex-col border-r border-gray-200">
+        <div className="flex-1 flex flex-col border-r border-[hsl(var(--border))]">
           {/* Instructions Panel (Collapsible) */}
           {showInstructions && (
-            <div className="border-b border-gray-200 bg-blue-50">
+            <div className="border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30">
               <div className="max-w-4xl mx-auto p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Assignment Instructions</h2>
-                <div className="prose prose-sm max-w-none max-h-80 overflow-auto bg-white rounded-lg p-4 border border-blue-200">
-                  <div className="whitespace-pre-wrap text-gray-700">
-                    {assignmentInstructions}
+                <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-3">Assignment Instructions</h2>
+                <div className="prose prose-sm max-w-none max-h-80 overflow-auto bg-[hsl(var(--card))] rounded-lg p-4 border border-[hsl(var(--border))]">
+                  <div className="text-[hsl(var(--foreground))] prose prose-sm max-w-none dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {assignmentInstructions}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>
@@ -222,14 +243,14 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
         {/* Resize Handle - only show when chat is open */}
         {isChatOpen && (
           <div
-            className="w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize transition-colors"
+            className="w-1 bg-[hsl(var(--border))] hover:bg-[hsl(var(--primary))] cursor-col-resize transition-colors"
             onMouseDown={startResize}
           />
         )}
 
         {/* Chat (Right) - only show when open */}
         {isChatOpen && (
-          <div className="bg-gray-50" style={{ width: `${chatWidth}px` }}>
+          <div className="bg-[hsl(var(--muted))]/10" style={{ width: `${chatWidth}px` }}>
             <ChatPanel
               sessionId={sessionId}
               assignmentId={assignmentId}
@@ -245,12 +266,10 @@ export default function EditorClient({ sessionId, assignmentId, assignmentTitle,
           <div className="fixed top-1/2 right-0 -translate-y-1/2 z-50">
             <Button
               onClick={() => setChatOpen(true)}
-              className="bg-blue-600 text-white px-3 py-6 rounded-l-lg shadow-lg hover:px-4 transition-all duration-300 flex items-center gap-2"
+              className="rounded-r-none rounded-l-lg shadow-lg h-auto py-4 pl-3 pr-4"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-              <span className="text-xs font-medium">AI</span>
+              <Bot className="w-5 h-5 mr-2" />
+              <span className="text-xs font-medium">AI Helper</span>
             </Button>
           </div>
         )}

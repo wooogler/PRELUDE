@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function JoinAssignmentForm() {
   const router = useRouter();
@@ -50,27 +51,28 @@ export default function JoinAssignmentForm() {
   };
 
   return (
-    <form onSubmit={handleJoin} className="space-y-3">
-      <label htmlFor="shareLink" className="block text-sm font-medium text-gray-700">
-        Share link or token
-      </label>
-      <input
-        id="shareLink"
-        type="text"
-        value={shareInput}
-        onChange={(e) => setShareInput(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        placeholder="https://.../s/abc123 or abc123"
-      />
+    <form onSubmit={handleJoin} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="shareLink" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          Share link or token
+        </label>
+        <Input
+          id="shareLink"
+          type="text"
+          value={shareInput}
+          onChange={(e) => setShareInput(e.target.value)}
+          placeholder="https://.../s/abc123 or abc123"
+        />
+      </div>
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+        <div className="text-destructive text-sm bg-destructive/10 p-3 rounded-md">
           {error}
         </div>
       )}
       <Button
         type="submit"
         disabled={isJoining}
-        className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+        className="w-full sm:w-auto"
       >
         {isJoining ? 'Joining...' : 'Join Assignment'}
       </Button>

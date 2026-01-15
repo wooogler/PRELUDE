@@ -4,7 +4,8 @@ import { eq, and, asc } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import BackLink from '@/components/ui/BackLink';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, FileText } from 'lucide-react';
 import ReplayClient from './ReplayClient';
 
 async function getInstructor() {
@@ -111,31 +112,35 @@ export default async function ReplayPage({ params }: PageProps) {
     : startTime + 60000; // Default 1 minute if no events
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-[hsl(var(--background))]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 flex-shrink-0">
+      <header className="bg-[hsl(var(--background))] border-b border-[hsl(var(--border))] flex-shrink-0">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <BackLink href={`/instructor/assignments/${assignment.id}`} label="Back" />
+              <Link href={`/instructor/assignments/${assignment.id}`}>
+                <Button variant="ghost" size="icon">
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+              </Link>
               <div>
-                <h1 className="text-lg font-bold text-gray-900">
+                <h1 className="text-lg font-heading font-bold text-[hsl(var(--foreground))]">
                   Replay: {session.studentLastName}, {session.studentFirstName}
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   {assignment.title} • {session.studentEmail}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[hsl(var(--muted-foreground))]">
                 Started: {session.startedAt.toLocaleString()}
               </div>
-              <Link
-                href={`/instructor/summary/${session.id}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
-              >
-                Summary
+              <Link href={`/instructor/summary/${session.id}`}>
+                <Button variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Summary
+                </Button>
               </Link>
             </div>
           </div>

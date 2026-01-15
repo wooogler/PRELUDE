@@ -2,18 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 interface DeleteStudentSessionButtonProps {
   sessionId: string;
   studentName: string;
-  assignmentId: string;
 }
 
-export default function DeleteStudentSessionButton({ 
-  sessionId, 
-  studentName,
-  assignmentId 
+export default function DeleteStudentSessionButton({
+  sessionId,
+  studentName
 }: DeleteStudentSessionButtonProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -41,7 +40,7 @@ export default function DeleteStudentSessionButton({
         const data = await res.json();
         alert(`Failed to delete: ${data.error || 'Unknown error'}`);
       }
-    } catch (error) {
+    } catch {
       alert('Failed to delete: Network error');
     } finally {
       setIsDeleting(false);
@@ -50,11 +49,14 @@ export default function DeleteStudentSessionButton({
 
   return (
     <Button
+      variant="ghost"
+      size="icon"
       onClick={handleDelete}
       disabled={isDeleting}
-      className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+      className="h-8 w-8 text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/10 hover:text-[hsl(var(--destructive))]"
+      title="Delete Student Work"
     >
-      {isDeleting ? 'Deleting...' : 'Delete'}
+      <Trash2 className="w-4 h-4" />
     </Button>
   );
 }

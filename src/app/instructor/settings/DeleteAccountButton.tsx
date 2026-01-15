@@ -2,13 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-interface DeleteAccountButtonProps {
-  instructorId: string;
-}
-
-export default function DeleteAccountButton({ instructorId }: DeleteAccountButtonProps) {
+export default function DeleteAccountButton() {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -34,7 +31,7 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
         alert(data.error || 'Failed to delete account');
         setIsDeleting(false);
       }
-    } catch (error) {
+    } catch {
       alert('Failed to delete account');
       setIsDeleting(false);
     }
@@ -43,25 +40,27 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
   if (showConfirm) {
     return (
       <div className="space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-800 font-medium mb-2">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-900/10 dark:border-red-900/20">
+          <p className="text-sm text-red-800 font-medium mb-2 dark:text-red-400">
             ⚠️ This action cannot be undone!
           </p>
-          <p className="text-sm text-red-700 mb-4">
+          <p className="text-sm text-red-700 mb-4 dark:text-red-300">
             Type <span className="font-mono font-bold">DELETE</span> to confirm account deletion:
           </p>
-          <input
-            type="text"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="Type DELETE"
-            className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-3"
-          />
+          <div className="mb-3">
+            <Input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              className="w-full bg-white dark:bg-black"
+            />
+          </div>
           <div className="flex gap-2">
             <Button
               onClick={handleDelete}
               disabled={isDeleting || confirmText !== 'DELETE'}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="destructive"
             >
               {isDeleting ? 'Deleting...' : 'Delete My Account'}
             </Button>
@@ -71,7 +70,7 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
                 setConfirmText('');
               }}
               disabled={isDeleting}
-              className="px-4 py-2 text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              variant="outline"
             >
               Cancel
             </Button>
@@ -84,7 +83,7 @@ export default function DeleteAccountButton({ instructorId }: DeleteAccountButto
   return (
     <Button
       onClick={() => setShowConfirm(true)}
-      className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+      variant="destructive"
     >
       Delete Account
     </Button>

@@ -7,7 +7,7 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
 interface SubmissionPreviewProps {
-  document: any[];
+  document: Record<string, unknown>[];
 }
 
 export default function SubmissionPreview({ document }: SubmissionPreviewProps) {

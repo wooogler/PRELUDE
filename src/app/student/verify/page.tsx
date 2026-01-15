@@ -47,7 +47,7 @@ function StudentVerifyContent() {
           setError(data.error || 'Verification failed');
           setIsVerifying(false);
         }
-      } catch (err) {
+      } catch {
         setError('Verification failed');
         setIsVerifying(false);
       }
@@ -86,7 +86,7 @@ function StudentVerifyContent() {
         const data = await res.json();
         setPasswordError(data.error || 'Failed to set password');
       }
-    } catch (err) {
+    } catch {
       setPasswordError('Failed to set password');
     } finally {
       setIsSubmitting(false);

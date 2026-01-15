@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -14,6 +15,11 @@ import {
   ColumnFiltersState,
 } from '@tanstack/react-table';
 import DeleteStudentSessionButton from './DeleteStudentSessionButton';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, PlayCircle, FileText, Users } from 'lucide-react';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 interface StudentWithStats {
   id: string;
@@ -32,12 +38,11 @@ interface StudentWithStats {
 
 interface StudentTableProps {
   students: StudentWithStats[];
-  assignmentId: string;
 }
 
 const columnHelper = createColumnHelper<StudentWithStats>();
 
-export default function StudentTable({ students, assignmentId }: StudentTableProps) {
+export default function StudentTable({ students }: StudentTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'studentName', desc: false }
   ]);
@@ -51,8 +56,8 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
         header: 'Student',
         cell: (info) => (
           <div>
-            <div className="text-sm font-medium text-gray-900">{info.getValue()}</div>
-            <div className="text-sm text-gray-500">{info.row.original.studentEmail}</div>
+            <div className="text-sm font-medium text-[hsl(var(--foreground))]">{info.getValue()}</div>
+            <div className="text-xs text-[hsl(var(--muted-foreground))]">{info.row.original.studentEmail}</div>
           </div>
         ),
         sortingFn: (rowA, rowB) => {
@@ -66,35 +71,41 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
       columnHelper.accessor('startedAt', {
         header: 'Started',
         cell: (info) => (
-          <span className="text-sm text-gray-600">
-            {new Date(info.getValue()).toLocaleString()}
+          <span className="text-sm text-[hsl(var(--muted-foreground))]">
+            {new Date(info.getValue()).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
           </span>
         ),
       }),
       columnHelper.accessor('lastSavedAt', {
         header: 'Last Active',
         cell: (info) => (
-          <span className="text-sm text-gray-600">
-            {info.getValue() ? new Date(info.getValue()!).toLocaleString() : '-'}
+          <span className="text-sm text-[hsl(var(--muted-foreground))]">
+            {info.getValue() ? new Date(info.getValue()!).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : '-'}
           </span>
         ),
       }),
       columnHelper.accessor('stats.submissions', {
         header: 'Submissions',
-        cell: (info) => <span className="text-sm text-gray-900">{info.getValue()}</span>,
+        cell: (info) => (
+          <div className="flex">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]">
+              {info.getValue()}
+            </span>
+          </div>
+        ),
       }),
       columnHelper.accessor((row) => row.stats, {
         id: 'pastes',
-        header: 'Pastes',
+        header: 'Copy/Paste',
         cell: (info) => {
           const stats = info.getValue();
           return (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-green-600">
-                {stats.pasteInternal} internal
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                <span className="font-medium text-emerald-600">{stats.pasteInternal}</span> internal
               </span>
               {stats.pasteExternal > 0 && (
-                <span className="text-sm text-red-600 font-medium">
+                <span className="text-xs text-[hsl(var(--destructive))] font-medium">
                   {stats.pasteExternal} external
                 </span>
               )}
@@ -109,30 +120,43 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
         cell: (info) => {
           const student = info.row.original;
           return (
-            <div className="flex items-center justify-end gap-3">
-              <Link
-                href={`/instructor/summary/${student.id}`}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            <div className="flex items-center justify-end gap-1">
+              <div className="flex items-center">
+                <Link
+                  href={`/instructor/summary/${student.id}`}
+                  data-tooltip-id="student-actions-tooltip"
+                  data-tooltip-content="View Summary"
+                >
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]">
+                    <FileText className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link
+                  href={`/instructor/replay/${student.id}`}
+                  data-tooltip-id="student-actions-tooltip"
+                  data-tooltip-content="Replay Session"
+                >
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))]">
+                    <PlayCircle className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+              <div className="w-px h-4 bg-[hsl(var(--border))] mx-1" />
+              <div
+                data-tooltip-id="student-actions-tooltip"
+                data-tooltip-content="Delete Student Work"
               >
-                Summary
-              </Link>
-              <Link
-                href={`/instructor/replay/${student.id}`}
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                Replay
-              </Link>
-              <DeleteStudentSessionButton
-                sessionId={student.id}
-                studentName={`${student.studentLastName}, ${student.studentFirstName}`}
-                assignmentId={assignmentId}
-              />
+                <DeleteStudentSessionButton
+                  sessionId={student.id}
+                  studentName={`${student.studentLastName}, ${student.studentFirstName}`}
+                />
+              </div>
             </div>
           );
         },
       }),
     ],
-    [assignmentId]
+    []
   );
 
   const table = useReactTable({
@@ -159,8 +183,11 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
 
   if (students.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-gray-500">No students have started yet</p>
+      <div className="p-12 text-center">
+        <div className="w-16 h-16 bg-[hsl(var(--muted))] rounded-full flex items-center justify-center mx-auto mb-4">
+          <Users className="w-8 h-8 text-[hsl(var(--muted-foreground))]" />
+        </div>
+        <p className="text-[hsl(var(--muted-foreground))]">No students have started this assignment yet.</p>
       </div>
     );
   }
@@ -168,38 +195,36 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
   return (
     <div>
       {/* Search Bar */}
-      <div className="p-4 border-b border-gray-200">
-        <input
-          type="text"
-          value={globalFilter ?? ''}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search students by name or email..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="p-4 border-b border-[hsl(var(--border))]">
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+          <Input
+            type="text"
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search students..."
+            className="pl-9"
+          />
+        </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-[hsl(var(--border))]">
+          <thead className="bg-[hsl(var(--muted))]/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                      header.column.getCanSort() ? 'cursor-pointer select-none hover:bg-gray-100' : ''
-                    } ${header.id === 'actions' ? 'text-right' : ''}`}
+                    className={`px-6 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-[hsl(var(--foreground))]' : ''
+                      } ${header.id === 'actions' ? 'text-right' : ''}`}
                     onClick={header.column.getToggleSortingHandler()}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 ${header.id === 'actions' ? 'justify-end' : ''}`}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
-                        <span className={header.column.getIsSorted() ? 'text-blue-600' : 'text-gray-400'}>
-                          {header.column.getIsSorted() === 'asc' && '▲'}
-                          {header.column.getIsSorted() === 'desc' && '▼'}
-                          {!header.column.getIsSorted() && '▼'}
-                        </span>
+                        <ArrowUpDown className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />
                       )}
                     </div>
                   </th>
@@ -207,15 +232,14 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
               </tr>
             ))}
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-[hsl(var(--card))] divide-y divide-[hsl(var(--border))]">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50">
+              <tr key={row.id} className="hover:bg-[hsl(var(--muted))]/30 transition-colors">
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      cell.column.id === 'actions' ? 'text-right' : ''
-                    }`}
+                    className={`px-6 py-4 whitespace-nowrap ${cell.column.id === 'actions' ? 'text-right' : ''
+                      }`}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
@@ -227,9 +251,9 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
       </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+      <div className="px-6 py-4 border-t border-[hsl(var(--border))] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-[hsl(var(--muted-foreground))]">
             Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
             {Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -238,13 +262,13 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
             of {table.getFilteredRowModel().rows.length} students
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">Show</span>
+            <span className="text-sm text-[hsl(var(--muted-foreground))] hidden sm:inline">Rows per page</span>
             <select
               value={table.getState().pagination.pageSize}
               onChange={(e) => {
                 table.setPageSize(Number(e.target.value));
               }}
-              className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-[hsl(var(--border))] rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
             >
               {[10, 20, 30, 50, 100].map((pageSize) => (
                 <option key={pageSize} value={pageSize}>
@@ -252,43 +276,64 @@ export default function StudentTable({ students, assignmentId }: StudentTablePro
                 </option>
               ))}
             </select>
-            <span className="text-sm text-gray-700">per page</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-8"
           >
-            {'<<'}
-          </button>
-          <button
+            <ChevronsLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-8"
           >
-            {'<'}
-          </button>
-          <span className="text-sm text-gray-700">
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm font-medium text-[hsl(var(--foreground))] px-2">
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-8"
           >
-            {'>'}
-          </button>
-          <button
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-8"
           >
-            {'>>'}
-          </button>
+            <ChevronsRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
+
+      <Tooltip
+        id="student-actions-tooltip"
+        place="top"
+        style={{
+          backgroundColor: 'hsl(var(--foreground))',
+          color: 'hsl(var(--background))',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          zIndex: 50
+        }}
+        noArrow
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db/db';
 import { editorEvents } from '@/db/schema';
-import { eq, and, asc, desc } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import { z } from 'zod';
 
 const submissionsSchema = z.object({

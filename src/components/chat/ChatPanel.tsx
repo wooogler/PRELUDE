@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useMemo } from 'react';
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Button } from '@headlessui/react';
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Plus, X, Globe, ChevronDown, Check } from 'lucide-react';
 import { getGlobalValidator } from '@/lib/copy-validator';
 import toast, { Toaster } from 'react-hot-toast';
 import ConversationList from './ConversationList';
@@ -18,17 +20,21 @@ interface ChatPanelProps {
   mode?: 'live' | 'replay';
   replayConversations?: Conversation[];
   replayMessages?: Message[];
+  highlightedMessageId?: number | null;
 }
 
 export default function ChatPanel({
   sessionId,
   assignmentId,
+  // isOpen not used in component body but kept in props for interface
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isOpen,
   onToggle,
   allowWebSearch = false,
   mode = 'live',
   replayConversations = [],
-  replayMessages = []
+  replayMessages = [],
+  highlightedMessageId = null,
 }: ChatPanelProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const validator = getGlobalValidator();
@@ -59,8 +65,13 @@ export default function ChatPanel({
   const isReplayMode = mode === 'replay';
 
   // Memoize replay props to prevent infinite loops
-  const memoizedReplayMessages = useMemo(() => replayMessages, [JSON.stringify(replayMessages)]);
-  const memoizedReplayConversations = useMemo(() => replayConversations, [JSON.stringify(replayConversations)]);
+  const replayMessagesJson = JSON.stringify(replayMessages);
+  const replayConversationsJson = JSON.stringify(replayConversations);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const memoizedReplayMessages = useMemo(() => replayMessages, [replayMessagesJson]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const memoizedReplayConversations = useMemo(() => replayConversations, [replayConversationsJson]);
 
   // Set mode on mount
   useEffect(() => {
@@ -201,71 +212,68 @@ export default function ChatPanel({
           className: '',
           style: {
             cursor: 'pointer',
+            background: 'hsl(var(--card))',
+            color: 'hsl(var(--foreground))',
+            border: '1px solid hsl(var(--border))',
           },
         }}
       />
 
       {/* Chat panel - always rendered for smooth animation */}
-      <div className="flex flex-col h-full bg-white">
+      <div className="flex flex-col h-full bg-[hsl(var(--background))]">
         {/* Header with New Conversation and Close buttons */}
-        <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+        <div className="border-b border-[hsl(var(--border))] px-4 py-3 flex items-center justify-between bg-[hsl(var(--card))]">
+          <h3 className="font-semibold text-[hsl(var(--foreground))]">AI Assistant</h3>
           <div className="flex items-center gap-2">
             {/* New conversation button - only show in live mode */}
             {!isReplayMode && (
               <Button
                 onClick={handleCreateConversation}
                 disabled={isCreatingConversation}
-                className="text-gray-600 hover:text-gray-900 disabled:text-gray-400"
+                variant="ghost"
+                size="icon"
                 title="New conversation"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+                <Plus className="w-5 h-5" />
               </Button>
             )}
             <Button
               onClick={() => onToggle(false)}
-              className="text-gray-600 hover:text-gray-900"
+              variant="ghost"
+              size="icon"
               title="Close chat"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5" />
             </Button>
           </div>
         </div>
 
         {/* Conversation filter - show in replay mode when there are conversations */}
         {isReplayMode && conversations.length > 0 && (
-          <div className="border-b border-gray-200 px-4 py-2 bg-gray-50">
+          <div className="border-b border-[hsl(var(--border))] px-4 py-2 bg-[hsl(var(--muted))]/10">
             <Listbox
               value={activeConversationId || 'all'}
               onChange={(value) => setActiveConversationId(value)}
             >
               <div className="relative">
-                <ListboxButton className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 text-left flex items-center justify-between gap-2">
+                <ListboxButton className="w-full px-3 py-2 text-sm border border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-left flex items-center justify-between gap-2 hover:bg-[hsl(var(--accent))] transition-colors">
                   <span>
                     {activeConversationId === 'all' || !activeConversationId
                       ? `All conversations (${conversations.length})`
                       : conversations.find(c => c.id === activeConversationId)?.title || 'Conversation'}
                   </span>
-                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.292l3.71-4.06a.75.75 0 111.1 1.02l-4.25 4.65a.75.75 0 01-1.1 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                  </svg>
+                  <ChevronDown className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                 </ListboxButton>
-                <ListboxOptions className="absolute left-0 mt-2 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 z-10">
+                <ListboxOptions className="absolute left-0 mt-2 max-h-60 w-full overflow-auto rounded-md bg-[hsl(var(--popover))] py-1 text-sm shadow-md ring-1 ring-[hsl(var(--border))] z-10 focus:outline-none">
                   <ListboxOption
                     value="all"
-                    className="cursor-pointer select-none px-3 py-2 hover:bg-gray-100"
+                    className="cursor-pointer select-none px-3 py-2 hover:bg-[hsl(var(--accent))] text-[hsl(var(--popover-foreground))]"
                   >
                     {({ selected }) => (
                       <div className="flex items-center justify-between">
                         <span className="font-medium">All conversations ({conversations.length})</span>
                         {selected && (
-                          <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fillRule="evenodd" d="M16.704 5.29a1 1 0 01.006 1.414l-7.1 7.2a1 1 0 01-1.42.01l-3.3-3.2a1 1 0 011.4-1.44l2.59 2.51 6.39-6.48a1 1 0 011.414-.006z" clipRule="evenodd" />
-                          </svg>
+                          <Check className="w-4 h-4 text-[hsl(var(--primary))]" />
                         )}
                       </div>
                     )}
@@ -274,15 +282,13 @@ export default function ChatPanel({
                     <ListboxOption
                       key={conv.id}
                       value={conv.id}
-                      className="cursor-pointer select-none px-3 py-2 hover:bg-gray-100"
+                      className="cursor-pointer select-none px-3 py-2 hover:bg-[hsl(var(--accent))] text-[hsl(var(--popover-foreground))]"
                     >
                       {({ selected }) => (
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{conv.title}</span>
                           {selected && (
-                            <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M16.704 5.29a1 1 0 01.006 1.414l-7.1 7.2a1 1 0 01-1.42.01l-3.3-3.2a1 1 0 011.4-1.44l2.59 2.51 6.39-6.48a1 1 0 011.414-.006z" clipRule="evenodd" />
-                            </svg>
+                            <Check className="w-4 h-4 text-[hsl(var(--primary))]" />
                           )}
                         </div>
                       )}
@@ -313,14 +319,15 @@ export default function ChatPanel({
           showTimestamp={isReplayMode}
           enableCopy={!isReplayMode}
           showWebSearchIndicator={isReplayMode}
+          highlightedMessageId={highlightedMessageId}
         />
 
         {/* Input - only show in live mode */}
         {!isReplayMode && (
-          <div className="p-4 bg-gray-50">
+          <div className="p-4 bg-[hsl(var(--muted))]/10 border-t border-[hsl(var(--border))]">
             <form onSubmit={handleSubmit}>
               {/* ChatGPT-style input container */}
-              <div className="bg-gray-200 border border-gray-300 rounded-2xl p-3 flex flex-col gap-2">
+              <div className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-2xl p-3 flex flex-col gap-2 shadow-sm focus-within:ring-2 focus-within:ring-[hsl(var(--primary))]/20 transition-all">
                 {/* Textarea */}
                 <textarea
                   ref={inputRef}
@@ -330,14 +337,14 @@ export default function ChatPanel({
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       if (input.trim() && activeConversationId && !isLoading) {
-                        handleSubmit(e as any);
+                        handleSubmit(e as unknown as React.FormEvent);
                       }
                     }
                   }}
                   placeholder="Ask for help with your essay..."
                   disabled={!activeConversationId || isLoading}
                   rows={1}
-                  className="w-full bg-transparent resize-none outline-none text-base placeholder-gray-500 disabled:text-gray-400"
+                  className="w-full bg-transparent resize-none outline-none text-base text-[hsl(var(--foreground))] placeholder-[hsl(var(--muted-foreground))] disabled:text-[hsl(var(--muted-foreground))]"
                   style={{
                     minHeight: '28px',
                     maxHeight: '200px',
@@ -357,15 +364,14 @@ export default function ChatPanel({
                     <Button
                       type="button"
                       onClick={toggleWebSearch}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
-                        webSearchEnabled
-                          ? 'text-sky-500 bg-gray-300 hover:bg-gray-400'
-                          : 'text-gray-500 hover:bg-gray-300'
-                      }`}
+                      variant="ghost"
+                      size="sm"
+                      className={`flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${webSearchEnabled
+                        ? 'text-sky-500 bg-sky-500/10 hover:bg-sky-500/20'
+                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]'
+                        }`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 919-9" />
-                      </svg>
+                      <Globe className="w-4 h-4" />
                       <span>Web search</span>
                     </Button>
                   ) : (
@@ -373,19 +379,18 @@ export default function ChatPanel({
                   )}
 
                   {/* Send Button - Circular */}
-                  <Button
+                  <button
                     type="submit"
                     disabled={!input.trim() || isLoading || !activeConversationId}
-                    className={`p-2 rounded-full transition-colors ${
-                      input.trim() && activeConversationId && !isLoading
-                        ? 'bg-gray-700 hover:bg-gray-800 text-white'
-                        : 'bg-gray-300 text-gray-400 cursor-not-allowed'
-                    }`}
+                    className={`p-2 rounded-full transition-colors flex items-center justify-center ${input.trim() && activeConversationId && !isLoading
+                      ? 'bg-gray-700 hover:bg-gray-800 text-white'
+                      : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                      }`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     </svg>
-                  </Button>
+                  </button>
                 </div>
               </div>
             </form>

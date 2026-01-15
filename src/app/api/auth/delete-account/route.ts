@@ -17,7 +17,7 @@ async function getUser() {
   });
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE() {
   try {
     const user = await getUser();
 

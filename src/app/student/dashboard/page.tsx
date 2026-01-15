@@ -5,7 +5,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import JoinAssignmentForm from '@/components/student/JoinAssignmentForm';
-import { Button } from '@headlessui/react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import DashboardHeaderActions from '@/components/student/DashboardHeaderActions';
 
 async function getStudent() {
   const cookieStore = await cookies();
@@ -75,110 +76,97 @@ export default async function StudentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+      <header className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">SWAG</h1>
-              <p className="text-sm text-gray-600">Student Dashboard</p>
+              <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">SWAG</h1>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">Student Dashboard</p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{student.email}</span>
-              <Link
-                href="/student/settings"
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                Settings
-              </Link>
-              <form action="/api/auth/logout" method="POST">
-                <Button
-                  type="submit"
-                  className="text-sm text-red-600 hover:text-red-800 font-medium"
-                >
-                  Logout
-                </Button>
-              </form>
-            </div>
+            <DashboardHeaderActions email={student.email} />
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Join a new assignment
-          </h2>
-          <JoinAssignmentForm />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Join a new assignment</CardTitle>
+            <CardDescription>Enter a share link or token provided by your instructor</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <JoinAssignmentForm />
+          </CardContent>
+        </Card>
 
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Your Assignments</h2>
-          </div>
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold tracking-tight">Your Assignments</h2>
 
           {sessionsWithActivity.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-              <p className="text-gray-500">No assignments yet</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Join an assignment using a share link above
-              </p>
-            </div>
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-[hsl(var(--muted-foreground))]">No assignments yet</p>
+                <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
+                  Join an assignment using the form above
+                </p>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Deadline
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Active
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Submission
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {sessionsWithActivity.map((session) => (
-                    <tr key={session.sessionId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {session.title}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {new Date(session.deadline).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDateTime(session.lastLoginAt ?? session.startedAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDateTime(session.lastSubmissionAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <Link
-                          href={`/s/${session.shareToken}/editor/${session.sessionId}`}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          Open
-                        </Link>
-                      </td>
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-[hsl(var(--muted)/0.5)] border-b border-[hsl(var(--border))]">
+                    <tr>
+                      <th className="px-6 py-3 font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider text-xs">
+                        Title
+                      </th>
+                      <th className="px-6 py-3 font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider text-xs">
+                        Deadline
+                      </th>
+                      <th className="px-6 py-3 font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider text-xs">
+                        Last Active
+                      </th>
+                      <th className="px-6 py-3 font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider text-xs">
+                        Last Submission
+                      </th>
+                      <th className="px-6 py-3 font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider text-xs text-right">
+                        Action
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[hsl(var(--border))]">
+                    {sessionsWithActivity.map((session) => (
+                      <tr key={session.sessionId} className="group hover:bg-[hsl(var(--muted)/0.3)] transition-colors">
+                        <td className="px-6 py-4 font-medium text-[hsl(var(--foreground))]">
+                          {session.title}
+                        </td>
+                        <td className="px-6 py-4 text-[hsl(var(--muted-foreground))]">
+                          {new Date(session.deadline).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-[hsl(var(--muted-foreground))]">
+                          {formatDateTime(session.lastLoginAt ?? session.startedAt)}
+                        </td>
+                        <td className="px-6 py-4 text-[hsl(var(--muted-foreground))]">
+                          {formatDateTime(session.lastSubmissionAt)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Link
+                            href={`/s/${session.shareToken}/editor/${session.sessionId}`}
+                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 rounded-md px-3 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90"
+                          >
+                            Open
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </div>
       </main>
-    </div>
+    </div >
   );
 }

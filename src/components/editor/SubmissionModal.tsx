@@ -2,18 +2,20 @@
 
 import { Fragment, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Dialog, Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition, Button } from '@headlessui/react';
+import { Dialog, Listbox, ListboxButton, ListboxOption, ListboxOptions, Transition } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { X, ChevronDown, Check } from 'lucide-react';
 
 const SubmissionPreview = dynamic(() => import('./SubmissionPreview'), {
   ssr: false,
   loading: () => (
-    <div className="text-center text-gray-400 py-16">Loading preview...</div>
+    <div className="text-center text-[hsl(var(--muted-foreground))] py-16">Loading preview...</div>
   ),
 });
 
 interface SubmissionEvent {
   id: number;
-  eventData: any;
+  eventData: Record<string, unknown>[];
   timestamp: string | Date;
   sequenceNumber: number;
 }
@@ -67,7 +69,7 @@ export default function SubmissionModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
         </Transition.Child>
 
         <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -80,95 +82,82 @@ export default function SubmissionModal({
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-2"
           >
-            <Dialog.Panel className="w-[90vw] max-w-5xl max-h-[85vh] bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <div>
-              <Dialog.Title className="text-lg font-semibold text-gray-900">
-                Submission Preview
-              </Dialog.Title>
-              <p className="text-sm text-gray-600 mt-1">
-                {sortedSubmissions.length > 0
-                  ? `${selectedIndex + 1} / ${sortedSubmissions.length} • ${selectedSubmission ? new Date(selectedSubmission.timestamp).toLocaleString() : ''}`
-                  : 'No submissions yet'}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Listbox
-                value={selectedSubmission ?? null}
-                onChange={(submission) => onSelectSubmission(submission.id)}
-                disabled={!hasSubmissions}
-              >
-                <div className="relative">
-                  <ListboxButton className="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-700 disabled:opacity-50 min-w-[220px] text-left flex items-center justify-between gap-2">
-                    <span>
-                      {selectedSubmission
-                        ? `Submission ${selectedIndex + 1}`
-                        : 'No submissions'}
-                    </span>
-                    <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.292l3.71-4.06a.75.75 0 111.1 1.02l-4.25 4.65a.75.75 0 01-1.1 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                    </svg>
-                  </ListboxButton>
-                  <ListboxOptions className="absolute right-0 mt-2 max-h-60 w-72 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 z-10">
-                    {sortedSubmissions.map((submission, index) => (
-                      <ListboxOption
-                        key={submission.id}
-                        value={submission}
-                        className="cursor-pointer select-none px-3 py-2 hover:bg-gray-100"
-                      >
-                        {({ selected }) => (
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{`Submission ${index + 1}`}</span>
-                              {selected && (
-                                <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                  <path fillRule="evenodd" d="M16.704 5.29a1 1 0 01.006 1.414l-7.1 7.2a1 1 0 01-1.42.01l-3.3-3.2a1 1 0 011.4-1.44l2.59 2.51 6.39-6.48a1 1 0 011.414-.006z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {new Date(submission.timestamp).toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                      </ListboxOption>
-                    ))}
-                  </ListboxOptions>
+            <Dialog.Panel className="w-[90vw] max-w-5xl max-h-[85vh] bg-[hsl(var(--background))] rounded-lg shadow-xl flex flex-col overflow-hidden border border-[hsl(var(--border))]">
+              <div className="px-6 py-4 border-b border-[hsl(var(--border))] flex items-center justify-between">
+                <div>
+                  <Dialog.Title className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                    Submission Preview
+                  </Dialog.Title>
+                  <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
+                    {sortedSubmissions.length > 0
+                      ? `${selectedIndex + 1} / ${sortedSubmissions.length} • ${selectedSubmission ? new Date(selectedSubmission.timestamp).toLocaleString() : ''}`
+                      : 'No submissions yet'}
+                  </p>
                 </div>
-              </Listbox>
-              <Button
-                className="ml-2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                onClick={onClose}
-                aria-label="Close"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </Button>
-            </div>
-          </div>
+                <div className="flex items-center gap-3">
+                  <Listbox
+                    value={selectedSubmission ?? null}
+                    onChange={(submission) => onSelectSubmission(submission.id)}
+                    disabled={!hasSubmissions}
+                  >
+                    <div className="relative">
+                      <ListboxButton className="px-3 py-1.5 text-sm border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--background))] text-[hsl(var(--foreground))] disabled:opacity-50 min-w-[220px] text-left flex items-center justify-between gap-2 hover:bg-[hsl(var(--accent))] transition-colors">
+                        <span>
+                          {selectedSubmission
+                            ? `Submission ${selectedIndex + 1}`
+                            : 'No submissions'}
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                      </ListboxButton>
+                      <ListboxOptions className="absolute right-0 mt-2 max-h-60 w-72 overflow-auto rounded-md bg-[hsl(var(--popover))] py-1 text-sm shadow-md ring-1 ring-[hsl(var(--border))] z-10 focus:outline-none">
+                        {sortedSubmissions.map((submission, index) => (
+                          <ListboxOption
+                            key={submission.id}
+                            value={submission}
+                            className="cursor-pointer select-none px-3 py-2 hover:bg-[hsl(var(--accent))] text-[hsl(var(--popover-foreground))]"
+                          >
+                            {({ selected }) => (
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{`Submission ${index + 1}`}</span>
+                                  {selected && (
+                                    <Check className="w-4 h-4 text-[hsl(var(--primary))]" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                                  {new Date(submission.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </ListboxOption>
+                        ))}
+                      </ListboxOptions>
+                    </div>
+                  </Listbox>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
 
-          <div className="p-6 overflow-auto">
-            <div className="max-w-4xl mx-auto">
-              {hasSubmissions ? (
-                <SubmissionPreview document={documentToShow} />
-              ) : (
-                <div className="text-center text-gray-500 py-16">
-                  No submissions yet.
+              <div className="p-6 overflow-auto bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+                <div className="max-w-4xl mx-auto">
+                  {hasSubmissions ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <SubmissionPreview document={documentToShow} />
+                    </div>
+                  ) : (
+                    <div className="text-center text-[hsl(var(--muted-foreground))] py-16">
+                      No submissions yet.
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
             </Dialog.Panel>
           </Transition.Child>
         </div>

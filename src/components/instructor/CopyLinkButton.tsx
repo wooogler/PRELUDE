@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Link, Check } from 'lucide-react';
 
 interface CopyLinkButtonProps {
   url: string;
   className?: string;
+  iconOnly?: boolean;
 }
 
-export default function CopyLinkButton({ url, className = '' }: CopyLinkButtonProps) {
+export default function CopyLinkButton({ url, className = '', iconOnly = false }: CopyLinkButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -24,10 +26,22 @@ export default function CopyLinkButton({ url, className = '' }: CopyLinkButtonPr
   return (
     <Button
       onClick={handleCopy}
-      className={`text-sm text-blue-600 hover:text-blue-800 font-medium ${className}`}
+      variant="ghost"
+      size={iconOnly ? "icon" : "sm"}
+      className={`text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/10 ${className}`}
       title={url}
     >
-      {copied ? 'Copied!' : 'Copy Link'}
+      {copied ? (
+        <>
+          <Check className="w-4 h-4 mr-1" />
+          {!iconOnly && "Copied"}
+        </>
+      ) : (
+        <>
+          <Link className="w-4 h-4 mr-1" />
+          {!iconOnly && "Copy Link"}
+        </>
+      )}
     </Button>
   );
 }

@@ -2,7 +2,7 @@ export interface EditorEventData {
   type: 'paste_internal' | 'paste_external' | 'snapshot' | 'submission';
   timestamp: number;
   sequenceNumber: number;
-  data?: any;
+  data?: unknown;
 }
 
 export class EventTracker {
@@ -26,12 +26,12 @@ export class EventTracker {
   // 사용자 활동 추적 (throttled)
   trackActivity() {
     const now = Date.now();
-    
+
     // 1초 이내 중복 활동 무시
     if (now - this.lastActivityTime < this.activityThrottle) {
       return;
     }
-    
+
     this.lastActivityTime = now;
     this.activityCount++;
     this.keystrokeCount++; // 키 입력 카운트 증가
@@ -40,7 +40,7 @@ export class EventTracker {
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);
     }
-    
+
     this.inactivityTimer = setTimeout(() => {
       if (this.activityCount > 0 && this.snapshotCallback) {
         this.snapshotCallback();
@@ -53,7 +53,7 @@ export class EventTracker {
     }
   }
 
-  trackSnapshot(documentState: any) {
+  trackSnapshot(documentState: Record<string, unknown>[]) {
     this.queue.push({
       type: 'snapshot',
       timestamp: Date.now(),
@@ -67,7 +67,7 @@ export class EventTracker {
     this.scheduleSave();
   }
 
-  trackSubmission(documentState: any) {
+  trackSubmission(documentState: Record<string, unknown>[]) {
     this.queue.push({
       type: 'submission',
       timestamp: Date.now(),
@@ -91,7 +91,7 @@ export class EventTracker {
     // 키 입력 횟수 기반 또는 활동이 있고 3초 이상 지났으면 snapshot
     const timeSinceSnapshot = Date.now() - this.lastSnapshotTime;
     return (
-      this.activityCount > 0 && 
+      this.activityCount > 0 &&
       (this.keystrokeCount >= this.KEYSTROKES_PER_SNAPSHOT || timeSinceSnapshot >= 3000)
     );
   }

@@ -4,6 +4,8 @@ import { eq, and } from 'drizzle-orm';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import EditorClient from '@/components/editor/EditorClient';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 interface EditorPageProps {
   params: Promise<{ shareToken: string; sessionId: string }>;
@@ -25,31 +27,31 @@ export default async function EditorPage({ params }: EditorPageProps) {
   const isExpired = assignment.deadline.getTime() < Date.now();
   if (isExpired) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--foreground))] mb-2">
               {assignment.title}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))]">
               <span>Due: {assignment.deadline.toLocaleDateString()}</span>
             </div>
           </div>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h2 className="text-xl font-semibold text-red-800 mb-2">
-              Submission Closed
-            </h2>
-            <p className="text-red-600">
-              The deadline for this assignment has passed. The editor is no longer available.
-            </p>
-            <p className="text-sm text-gray-500 mt-4">
-              If you believe this is an error, please contact your instructor.
-            </p>
-          </div>
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+              <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+              <h2 className="text-xl font-semibold text-destructive mb-2">
+                Submission Closed
+              </h2>
+              <p className="text-[hsl(var(--foreground))]">
+                The deadline for this assignment has passed. The editor is no longer available.
+              </p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))] mt-4">
+                If you believe this is an error, please contact your instructor.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

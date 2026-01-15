@@ -16,7 +16,7 @@ export interface Message {
   metadata?: {
     webSearchEnabled?: boolean;
     webSearchUsed?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -101,7 +101,7 @@ export const useChatStore = create<ChatState>()(
 
           if (existingConversations.length > 0) {
             set({
-              conversations: existingConversations.map((conv: any) => ({
+              conversations: existingConversations.map((conv: { id: string; title: string; createdAt: string | number | Date }) => ({
                 id: conv.id,
                 title: conv.title,
                 createdAt: new Date(conv.createdAt),

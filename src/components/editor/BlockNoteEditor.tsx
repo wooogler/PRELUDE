@@ -16,7 +16,7 @@ interface BlockNoteEditorProps {
 export default function BlockNoteEditor({ sessionId }: BlockNoteEditorProps) {
   const trackerRef = useRef<EventTracker | null>(null);
   const validator = getGlobalValidator();
-  const [initialContent, setInitialContent] = useState<any[] | null>(null);
+  const [initialContent, setInitialContent] = useState<Record<string, unknown>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load snapshot on mount
@@ -149,6 +149,7 @@ export default function BlockNoteEditor({ sessionId }: BlockNoteEditorProps) {
     if (!editor) return;
 
     // Access underlying Tiptap editor for transaction tracking
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tiptapEditor = (editor as any)._tiptapEditor;
 
     if (!tiptapEditor) {
@@ -157,6 +158,7 @@ export default function BlockNoteEditor({ sessionId }: BlockNoteEditorProps) {
     }
 
     // Track user activity
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUpdate = ({ transaction }: any) => {
       if (!transaction.docChanged) return;
 

@@ -2,78 +2,92 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Flat & Simple Color Palette - Light Mode */
+  --background: 0 0% 100%;
+  /* #ffffff */
+  --foreground: 220 13% 18%;
+  /* #282c34 - Soft black for text */
+
+  --primary: 221 83% 53%;
+  /* #2563EB - Blue 600 */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221 83% 53%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 220 13% 18%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 13% 18%;
+
+  --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Flat & Simple Color Palette - Dark Mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
   }
+}
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: var(--font-sans);
 }
 
-@layer components {
-  /* Primary button - main actions */
-  .btn-primary {
-    @apply px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors;
-  }
-
-  /* Primary button - full width variant for forms */
-  .btn-primary-lg {
-    @apply w-full py-3 px-4 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors;
-  }
-
-  /* Secondary button - outlined style */
-  .btn-secondary {
-    @apply px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 font-medium transition-colors;
-  }
-
-  /* Secondary button - small variant */
-  .btn-secondary-sm {
-    @apply px-3 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium transition-colors;
-  }
-
-  /* Destructive button - for delete actions */
-  .btn-destructive {
-    @apply px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors;
-  }
-
-  /* Destructive button - small variant */
-  .btn-destructive-sm {
-    @apply px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 font-medium transition-colors;
-  }
-
-  /* Destructive button - outlined variant */
-  .btn-destructive-outline {
-    @apply px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 font-medium transition-colors;
-  }
-
-  /* Ghost/Link button - minimal style */
-  .btn-ghost {
-    @apply text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors;
-  }
-
-  /* Ghost button - destructive variant */
-  .btn-ghost-destructive {
-    @apply text-sm text-red-600 hover:text-red-800 font-medium transition-colors;
-  }
-
-  /* Success button - for submit/confirm actions */
-  .btn-success {
-    @apply px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium transition-colors;
-  }
-
-  /* Icon button - no specific sizing, just hover styles */
-  .btn-icon {
-    @apply text-gray-600 hover:text-gray-900 disabled:text-gray-400 font-medium transition-colors;
-  }
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
 }
 
 @layer utilities {
@@ -82,15 +96,21 @@ body {
   }
 }
 
-/* BlockNote placeholder styles */
+/* Base Utility Classes for Flat Design */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-current transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+}
+
+/* BlockNote placeholder styles - keeping existing logic */
 .bn-block-content[data-content-type="paragraph"]:empty::before {
   content: attr(data-placeholder);
-  color: #9ca3af;
+  color: hsl(var(--muted-foreground));
   pointer-events: none;
   position: absolute;
 }
 
-/* Only show placeholder on first empty paragraph */
-.bn-editor .bn-block-group > .bn-block-outer:first-child .bn-block-content[data-content-type="paragraph"]:empty::before {
+.bn-editor .bn-block-group>.bn-block-outer:first-child .bn-block-content[data-content-type="paragraph"]:empty::before {
   content: "Start writing your essay here...";
 }

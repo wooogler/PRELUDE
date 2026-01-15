@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     });
 
     // Format messages for OpenAI Responses API (requires 'msg' prefix for IDs)
-    const formattedMessages = messages.map((msg: any, idx: number) => ({
+    const formattedMessages = messages.map((msg: { id?: string; role: string; content: string }, idx: number) => ({
       id: msg.id?.startsWith('msg') ? msg.id : `msg_${Date.now()}_${idx}`,
       role: msg.role,
       content: msg.content,
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
           for await (const event of stream) {
             // Detect web search usage
             if (event.type === 'response.output_item.added') {
-              const item = (event as any).item;
+              const item = (event as unknown as { item: { type: string } }).item;
               if (item?.type === 'web_search_call') {
                 webSearchUsed = true;
               }

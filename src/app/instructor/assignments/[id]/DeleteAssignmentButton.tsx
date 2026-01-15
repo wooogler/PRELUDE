@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 interface DeleteAssignmentButtonProps {
   assignmentId: string;
@@ -27,7 +28,7 @@ export default function DeleteAssignmentButton({ assignmentId }: DeleteAssignmen
         const data = await res.json();
         alert(data.error || 'Failed to delete assignment');
       }
-    } catch (error) {
+    } catch {
       alert('Failed to delete assignment');
     } finally {
       setIsDeleting(false);
@@ -38,17 +39,19 @@ export default function DeleteAssignmentButton({ assignmentId }: DeleteAssignmen
   if (showConfirm) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-sm text-red-600">Delete this assignment?</span>
+        <span className="text-sm text-[hsl(var(--destructive))] font-medium">Are you sure?</span>
         <Button
+          variant="destructive"
+          size="sm"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="btn-destructive-sm"
         >
           {isDeleting ? 'Deleting...' : 'Yes, Delete'}
         </Button>
         <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setShowConfirm(false)}
-          className="btn-ghost px-3 py-1 text-gray-600 hover:text-gray-800"
         >
           Cancel
         </Button>
@@ -58,10 +61,12 @@ export default function DeleteAssignmentButton({ assignmentId }: DeleteAssignmen
 
   return (
     <Button
+      variant="outline"
+      className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/10 border-[hsl(var(--destructive))]/50 hover:border-[hsl(var(--destructive))]"
       onClick={() => setShowConfirm(true)}
-      className="btn-destructive-outline"
     >
-      Delete
+      <Trash2 className="w-4 h-4 mr-2" />
+      Delete Assignment
     </Button>
   );
 }

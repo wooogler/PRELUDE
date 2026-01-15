@@ -16,6 +16,8 @@ import {
   MenuItem,
   MenuItems,
 } from '@headlessui/react';
+import { Button } from '@/components/ui/button';
+import { Play, Pause, ChevronDown, Check, Keyboard, MessageSquare, ClipboardCopy, AlertTriangle, Send } from 'lucide-react';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import 'react-tooltip/dist/react-tooltip.css';
@@ -79,12 +81,14 @@ export default function ReplayPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(startTime);
   const [speed, setSpeed] = useState(5); // Default 5x speed
-  const [editorDocument, setEditorDocument] = useState<any[]>([
+  const [editorDocument, setEditorDocument] = useState<Record<string, unknown>[]>([
     { type: 'paragraph', content: [] }
   ]);
   const [visibleMessages, setVisibleMessages] = useState<ChatMessage[]>([]);
-  const [lastPasteEvent, setLastPasteEvent] = useState<{ type: string; timestamp: number } | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<{ type: string; label: string; timestamp: number } | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<number | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const prevVisibleMessagesCountRef = useRef<number>(0);
 
   const animationRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
@@ -98,6 +102,7 @@ export default function ReplayPlayer({
   useEffect(() => {
     if (editor) {
       const timer = setTimeout(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tiptapEditor = (editor as any)._tiptapEditor;
         if (tiptapEditor && tiptapEditor.view) {
           setIsEditorReady(true);
@@ -110,23 +115,23 @@ export default function ReplayPlayer({
 
   const duration = endTime - startTime;
 
-  // Detect idle periods FIRST (gaps > 2 minutes with no activity)
+  // Detect idle periods FIRST (gaps > 1 minute with no activity)
   const idlePeriods = useMemo(() => {
-    const IDLE_THRESHOLD = 2 * 60 * 1000; // 2 minutes
+    const IDLE_THRESHOLD = 60 * 1000; // 1 minute
     const allEventTimes: number[] = [];
 
     // Collect all event timestamps
     events.forEach(e => allEventTimes.push(e.timestamp));
     chatMessages.forEach(m => allEventTimes.push(m.timestamp));
-    
+
     // Sort by time
     allEventTimes.sort((a, b) => a - b);
 
-    const periods: Array<{ 
-      start: number; 
-      end: number; 
+    const periods: Array<{
+      start: number;
+      end: number;
       duration: number;
-      compressedMinutes: number; // 압축된 분 단위
+      compressedMs: number; // 압축되는 시간 (밀리초)
       edgeSeconds: number; // 앞뒤 표시할 시간 (초)
     }> = [];
 
@@ -134,16 +139,17 @@ export default function ReplayPlayer({
       const gap = allEventTimes[i + 1] - allEventTimes[i];
       if (gap > IDLE_THRESHOLD) {
         const totalSeconds = Math.floor(gap / 1000);
-        const compressedMinutes = Math.floor(totalSeconds / 60); // 분 단위로 압축
-        const remainingSeconds = totalSeconds - (compressedMinutes * 60);
-        const edgeSeconds = Math.floor(remainingSeconds / 2); // 앞뒤 균등 분할
-        
+        // 앞뒤 5초씩은 항상 표시하고, 나머지를 압축
+        const EDGE_SECONDS = 5;
+        const compressibleSeconds = Math.max(0, totalSeconds - (EDGE_SECONDS * 2));
+        const compressedMs = compressibleSeconds * 1000;
+
         periods.push({
           start: allEventTimes[i],
           end: allEventTimes[i + 1],
           duration: gap,
-          compressedMinutes,
-          edgeSeconds,
+          compressedMs, // 압축되는 시간 (밀리초)
+          edgeSeconds: EDGE_SECONDS,
         });
       }
     }
@@ -154,13 +160,13 @@ export default function ReplayPlayer({
   // Calculate compressed timeline (remove idle periods, keeping only edges)
   const getCompressedTime = useCallback((realTime: number) => {
     let compressed = realTime - startTime;
-    
+
     // Subtract compressed idle periods before this time
     idlePeriods.forEach(idle => {
       const idleMiddleStart = idle.start + (idle.edgeSeconds * 1000);
       const idleMiddleEnd = idle.end - (idle.edgeSeconds * 1000);
-      const compressedDuration = idle.compressedMinutes * 60 * 1000;
-      
+      const compressedDuration = idle.compressedMs;
+
       if (realTime >= idleMiddleEnd) {
         // We're past the entire idle period - subtract the compressed part
         compressed -= compressedDuration;
@@ -180,8 +186,8 @@ export default function ReplayPlayer({
 
     for (const idle of idlePeriods) {
       const idleStartCompressed = idle.start - startTime - accumulatedCompression;
-      const compressedDuration = idle.compressedMinutes * 60 * 1000;
-      
+      const compressedDuration = idle.compressedMs;
+
       if (compressedTime - startTime > idleStartCompressed + (idle.edgeSeconds * 1000)) {
         // We've passed this idle period's first edge
         real += compressedDuration;
@@ -196,14 +202,14 @@ export default function ReplayPlayer({
 
   // Compressed timeline duration
   const compressedDuration = useMemo(() => {
-    const totalCompression = idlePeriods.reduce((sum, idle) => 
-      sum + (idle.compressedMinutes * 60 * 1000), 0
+    const totalCompression = idlePeriods.reduce((sum, idle) =>
+      sum + (idle.compressedMs), 0
     );
     return duration - totalCompression;
   }, [duration, idlePeriods]);
 
-  const progress = compressedDuration > 0 
-    ? ((getCompressedTime(currentTime) - startTime) / compressedDuration) * 100 
+  const progress = compressedDuration > 0
+    ? ((getCompressedTime(currentTime) - startTime) / compressedDuration) * 100
     : 0;
 
   // Handle resize with mouse events
@@ -237,7 +243,7 @@ export default function ReplayPlayer({
 
     if (snapshot && snapshot.eventData) {
       // Return BlockNote document structure directly
-      const doc = snapshot.eventData as unknown as any[];
+      const doc = snapshot.eventData as unknown as Record<string, unknown>[];
       if (Array.isArray(doc)) {
         return doc;
       }
@@ -251,22 +257,52 @@ export default function ReplayPlayer({
   const updateVisibleMessages = useCallback((time: number) => {
     const visible = chatMessages.filter(m => m.timestamp <= time);
     setVisibleMessages(visible);
+
+    // Highlight newly added message
+    if (visible.length > prevVisibleMessagesCountRef.current) {
+      const newMessage = visible[visible.length - 1];
+      setHighlightedMessageId(newMessage.id);
+      // Clear highlight after 2 seconds
+      setTimeout(() => setHighlightedMessageId(null), 2000);
+    }
+    prevVisibleMessagesCountRef.current = visible.length;
   }, [chatMessages]);
 
-  // Check for paste events at current time
-  const checkPasteEvents = useCallback((time: number) => {
-    const recentPastes = events.filter(
-      e => (e.eventType === 'paste_internal' || e.eventType === 'paste_external') &&
-           e.timestamp <= time &&
-           e.timestamp > time - 2000 // Show for 2 seconds
-    );
+  // Check for editor-related events at current time (paste, submission)
+  const checkCurrentEvent = useCallback((time: number) => {
+    const EVENT_DISPLAY_DURATION = 3000; // Show event for 3 seconds
 
-    if (recentPastes.length > 0) {
-      const latest = recentPastes[recentPastes.length - 1];
-      setLastPasteEvent({ type: latest.eventType, timestamp: latest.timestamp });
-    } else {
-      setLastPasteEvent(null);
+    // Check paste events
+    const recentPaste = events.find(
+      e => (e.eventType === 'paste_internal' || e.eventType === 'paste_external') &&
+        e.timestamp <= time &&
+        e.timestamp > time - EVENT_DISPLAY_DURATION
+    );
+    if (recentPaste) {
+      setCurrentEvent({
+        type: recentPaste.eventType,
+        label: recentPaste.eventType === 'paste_external' ? 'External Paste Blocked' : 'Content Pasted',
+        timestamp: recentPaste.timestamp,
+      });
+      return;
     }
+
+    // Check submission events
+    const recentSubmission = events.find(
+      e => e.eventType === 'submission' &&
+        e.timestamp <= time &&
+        e.timestamp > time - EVENT_DISPLAY_DURATION
+    );
+    if (recentSubmission) {
+      setCurrentEvent({
+        type: 'submission',
+        label: 'Submitted',
+        timestamp: recentSubmission.timestamp,
+      });
+      return;
+    }
+
+    setCurrentEvent(null);
   }, [events]);
 
   // Animation loop
@@ -288,19 +324,19 @@ export default function ReplayPlayer({
 
       setCurrentTime((prev) => {
         let newTime = prev + deltaMs * speed;
-        
+
         // Check if we're entering an idle period and skip it
         for (const idle of idlePeriods) {
           const idleMiddleStart = idle.start + (idle.edgeSeconds * 1000);
           const idleMiddleEnd = idle.end - (idle.edgeSeconds * 1000);
-          
+
           // If we just entered the compressed middle part, jump to the end
           if (prev < idleMiddleStart && newTime >= idleMiddleStart) {
             newTime = idleMiddleEnd;
             break;
           }
         }
-        
+
         if (newTime >= endTime) {
           // Stop playing when reaching the end
           // Use setTimeout to avoid state update during render
@@ -328,8 +364,8 @@ export default function ReplayPlayer({
     const content = rebuildContent(currentTime);
     setEditorDocument(content);
     updateVisibleMessages(currentTime);
-    checkPasteEvents(currentTime);
-  }, [currentTime, rebuildContent, updateVisibleMessages, checkPasteEvents]);
+    checkCurrentEvent(currentTime);
+  }, [currentTime, rebuildContent, updateVisibleMessages, checkCurrentEvent]);
 
   // Update editor when document changes
   useEffect(() => {
@@ -337,6 +373,7 @@ export default function ReplayPlayer({
 
     // Safely check if editor is ready
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tiptapEditor = (editor as any)._tiptapEditor;
       if (!tiptapEditor || !tiptapEditor.view) {
         return; // Editor not fully mounted yet
@@ -366,12 +403,12 @@ export default function ReplayPlayer({
   };
 
   // Format time for display
-  const formatTime = (ms: number) => {
+  const formatTime = useCallback((ms: number) => {
     const seconds = Math.floor((ms - startTime) / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  }, [startTime]);
 
   // Get timeline markers for events (using compressed time)
   const getEventMarkers = () => {
@@ -436,34 +473,36 @@ export default function ReplayPlayer({
     return markers;
   };
 
-  // Get typing sessions from snapshots
+  // Get typing sessions from all events (to match idle period calculation)
   const getTypingSessions = useCallback(() => {
-    const snapshots = events
-      .filter(e => e.eventType === 'snapshot')
-      .sort((a, b) => a.timestamp - b.timestamp);
+    // Use same event list as idle period calculation for consistency
+    const allEventTimes: number[] = [];
+    events.forEach(e => allEventTimes.push(e.timestamp));
+    chatMessages.forEach(m => allEventTimes.push(m.timestamp));
+    allEventTimes.sort((a, b) => a - b);
 
     const sessions: Array<{ startTime: number; endTime: number }> = [];
-    const GAP_THRESHOLD = 5 * 60 * 1000; // 5 minute gap to identify when user resumed writing after a break
-    
-    if (snapshots.length === 0) return sessions;
+    const GAP_THRESHOLD = 60 * 1000; // 1 minute gap to match idle period threshold
+
+    if (allEventTimes.length === 0) return sessions;
 
     let currentSession = {
-      startTime: snapshots[0].timestamp,
-      endTime: snapshots[0].timestamp,
+      startTime: allEventTimes[0],
+      endTime: allEventTimes[0],
     };
 
-    for (let i = 1; i < snapshots.length; i++) {
-      const timeSinceLastSnapshot = snapshots[i].timestamp - currentSession.endTime;
+    for (let i = 1; i < allEventTimes.length; i++) {
+      const timeSinceLastEvent = allEventTimes[i] - currentSession.endTime;
 
-      if (timeSinceLastSnapshot <= GAP_THRESHOLD) {
+      if (timeSinceLastEvent <= GAP_THRESHOLD) {
         // 같은 세션 - 종료 시간 연장
-        currentSession.endTime = snapshots[i].timestamp;
+        currentSession.endTime = allEventTimes[i];
       } else {
         // 새로운 세션 시작
         sessions.push(currentSession);
         currentSession = {
-          startTime: snapshots[i].timestamp,
-          endTime: snapshots[i].timestamp,
+          startTime: allEventTimes[i],
+          endTime: allEventTimes[i],
         };
       }
     }
@@ -472,15 +511,15 @@ export default function ReplayPlayer({
     sessions.push(currentSession);
 
     return sessions;
-  }, [events]);
+  }, [events, chatMessages]);
 
   const markers = getEventMarkers();
   const typingSessions = getTypingSessions();
 
   // Get all navigable events
   const getNavigableEvents = useCallback(() => {
-    const navEvents: Array<{ 
-      time: number; 
+    const navEvents: Array<{
+      time: number;
       type: 'typing_start' | 'chat' | 'paste_internal' | 'paste_external' | 'submission';
       label: string;
       description: string;
@@ -538,33 +577,81 @@ export default function ReplayPlayer({
 
   const navigableEvents = getNavigableEvents();
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          // If at the end, restart from beginning
+          if (currentTime >= endTime) {
+            setCurrentTime(startTime);
+          }
+          setIsPlaying(prev => !prev);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          // Jump to next event
+          const nextEvent = navigableEvents.find(ev => ev.time > currentTime);
+          if (nextEvent) {
+            setCurrentTime(nextEvent.time);
+          }
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          // Jump to previous event with speed-adjusted buffer
+          const buffer = 1000 * speed; // Buffer scales with playback speed
+          const prevEvent = [...navigableEvents]
+            .reverse()
+            .find(ev => ev.time < currentTime - buffer);
+          if (prevEvent) {
+            setCurrentTime(prevEvent.time);
+          } else if (navigableEvents.length > 0) {
+            // Go to first event if no previous
+            setCurrentTime(navigableEvents[0].time);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentTime, navigableEvents, speed, startTime, endTime]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Timeline Controls */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))] px-6 py-4">
         <div className="flex items-center gap-4">
           {/* Play/Pause Button */}
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-full hover:bg-blue-700"
+          <Button
+            onClick={() => {
+              // If at the end, restart from beginning
+              if (currentTime >= endTime) {
+                setCurrentTime(startTime);
+              }
+              setIsPlaying(!isPlaying);
+            }}
+            size="icon"
+            className="rounded-full h-10 w-10"
           >
             {isPlaying ? (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <rect x="6" y="5" width="3" height="10" />
-                <rect x="11" y="5" width="3" height="10" />
-              </svg>
+              <Pause className="w-5 h-5" fill="currentColor" />
             ) : (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <polygon points="6,4 16,10 6,16" />
-              </svg>
+              <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
             )}
-          </button>
+          </Button>
 
           {/* Time Display */}
-          <div className="text-sm text-gray-600 w-32">
+          <div className="text-sm text-[hsl(var(--foreground))] font-mono w-32 tabular-nums">
             {formatTime(currentTime)} / {formatTime(endTime)}
             {idlePeriods.length > 0 && (
-              <div className="text-xs text-orange-600">
+              <div className="text-xs text-[hsl(var(--muted-foreground))]">
                 ({idlePeriods.length} breaks)
               </div>
             )}
@@ -572,8 +659,8 @@ export default function ReplayPlayer({
 
           {/* Timeline Container */}
           <div className="flex-1 flex flex-col gap-1">
-            {/* Typing Activity Bar (위쪽) */}
-            <div className="h-2 bg-gray-100 rounded relative">
+            {/* Typing Activity Bar (Top) */}
+            <div className="h-2 bg-[hsl(var(--secondary))] rounded relative overflow-hidden">
               {typingSessions.map((session, i) => {
                 const compressedStart = getCompressedTime(session.startTime);
                 const compressedEnd = getCompressedTime(session.endTime);
@@ -587,7 +674,7 @@ export default function ReplayPlayer({
                 return (
                   <div
                     key={`session-${i}`}
-                    className="absolute top-0 h-full bg-blue-400 rounded cursor-pointer"
+                    className="absolute top-0 h-full bg-blue-500/80 rounded cursor-pointer hover:bg-blue-500 transition-colors"
                     style={{
                       left: `${startPos}%`,
                       width: `${Math.max(width, 0.5)}%`,
@@ -598,48 +685,38 @@ export default function ReplayPlayer({
                 );
               })}
 
-              {/* Idle period indicators - compressed middle part only */}
+              {/* Idle period indicators */}
               {idlePeriods.map((idle, i) => {
                 const middleStart = idle.start + (idle.edgeSeconds * 1000);
                 const compressedMiddleStart = getCompressedTime(middleStart);
                 const middlePos = ((compressedMiddleStart - startTime) / compressedDuration) * 100;
-
-                // Fixed width for visibility
                 const markerWidth = 2; // 2% width
-                // Center the marker by offsetting half its width
                 const centeredPos = middlePos - (markerWidth / 2);
 
                 return (
                   <div key={`idle-${i}`}>
-                    {/* Only show the compressed middle part (dark gray) */}
                     <div
-                      className="absolute top-0 h-full bg-gray-700 cursor-pointer"
+                      className="absolute top-0 h-full bg-[hsl(var(--muted-foreground))] cursor-pointer hover:bg-[hsl(var(--foreground))]"
                       style={{
                         left: `${centeredPos}%`,
                         width: `${markerWidth}%`,
                       }}
                       data-tooltip-id="timeline-tooltip"
-                      data-tooltip-html={`<div class="text-center"><div class="font-semibold">Break</div><div class="text-xs text-gray-300 mt-1">${idle.compressedMinutes} minutes</div><div class="text-xs text-gray-400">Student was inactive</div></div>`}
-                    >
-                      <div
-                        className="absolute -top-5 left-1/2 transform -translate-x-1/2 text-xs font-bold text-gray-800 whitespace-nowrap"
-                      >
-                        {idle.compressedMinutes} min
-                      </div>
-                    </div>
+                      data-tooltip-html={`<div class="text-center"><div class="font-semibold">Break</div><div class="text-xs text-gray-300 mt-1">${Math.floor(idle.duration / 60000)}m ${Math.floor((idle.duration % 60000) / 1000)}s</div><div class="text-xs text-gray-400">Student was inactive</div></div>`}
+                    />
                   </div>
                 );
               })}
             </div>
 
-            {/* Main Timeline (아래쪽) */}
+            {/* Main Timeline (Bottom) */}
             <div
-              className="h-4 bg-gray-200 rounded cursor-pointer relative"
+              className="h-4 bg-[hsl(var(--input))] rounded cursor-pointer relative group"
               onClick={handleTimelineClick}
             >
               {/* Progress bar */}
               <div
-                className="absolute top-0 left-0 h-full bg-blue-500 rounded-l"
+                className="absolute top-0 left-0 h-full bg-[hsl(var(--primary))] rounded-l"
                 style={{ width: `${progress}%` }}
               />
 
@@ -647,30 +724,31 @@ export default function ReplayPlayer({
               {markers.map((marker) => (
                 <div
                   key={marker.id}
-                  className={`absolute top-0 w-1.5 h-full cursor-pointer hover:w-2 transition-all ${
-                    marker.type === 'paste_external'
-                      ? 'bg-red-500'
-                      : marker.type === 'paste_internal'
-                      ? 'bg-green-500'
+                  className={`absolute top-0 w-1.5 h-full cursor-pointer hover:w-2 transition-all z-10 ${marker.type === 'paste_external'
+                    ? 'bg-red-500'
+                    : marker.type === 'paste_internal'
+                      ? 'bg-emerald-500'
                       : marker.type === 'submission'
-                      ? 'bg-orange-500'
-                      : 'bg-purple-500'
-                  }`}
+                        ? 'bg-orange-500'
+                        : 'bg-purple-500'
+                    }`}
                   style={{ left: `${marker.position}%` }}
                   data-tooltip-id="timeline-tooltip"
-                  data-tooltip-html={`<div style="max-width: 250px;"><div class="font-semibold ${
-                    marker.type === 'paste_external' ? 'text-red-300' :
+                  data-tooltip-html={`<div style="max-width: 250px;"><div class="font-semibold ${marker.type === 'paste_external' ? 'text-red-300' :
                     marker.type === 'paste_internal' ? 'text-green-300' :
-                    marker.type === 'submission' ? 'text-orange-300' : 'text-purple-300'
-                  }">${marker.label}</div><div class="text-xs text-gray-300 mt-1">at ${marker.time}</div>${
-                    marker.content ? `<div class="text-xs text-gray-200 mt-2 whitespace-pre-wrap">${marker.content}</div>` : ''
-                  }</div>`}
+                      marker.type === 'submission' ? 'text-orange-300' : 'text-purple-300'
+                    }">${marker.label}</div><div class="text-xs text-gray-300 mt-1">at ${marker.time}</div>${marker.content ? `<div class="text-xs text-gray-200 mt-2 whitespace-pre-wrap">${marker.content}</div>` : ''
+                    }</div>`}
                 />
               ))}
 
               {/* Playhead */}
               <div
-                className="absolute top-0 w-3 h-full bg-blue-700 rounded"
+                className="absolute top-0 w-0.5 h-full bg-[hsl(var(--foreground))] scale-y-125 transition-transform"
+                style={{ left: `${progress}%` }}
+              />
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[hsl(var(--foreground))] rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ left: `calc(${progress}% - 6px)` }}
               />
             </div>
@@ -678,29 +756,25 @@ export default function ReplayPlayer({
 
           {/* Speed Control */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Speed:</span>
+            <span className="text-sm text-[hsl(var(--muted-foreground))]">Speed:</span>
             <Listbox value={speed} onChange={(value) => setSpeed(value)}>
               <div className="relative">
-                <ListboxButton className="px-2 py-1 border border-gray-300 rounded text-sm bg-white text-gray-700 min-w-[72px] text-left flex items-center justify-between gap-2">
+                <ListboxButton className="h-9 px-3 border border-[hsl(var(--input))] rounded-md text-sm bg-[hsl(var(--background))] text-[hsl(var(--foreground))] min-w-[80px] text-left flex items-center justify-between gap-2 hover:bg-[hsl(var(--accent))] transition-colors">
                   <span>{speed}x</span>
-                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.292l3.71-4.06a.75.75 0 111.1 1.02l-4.25 4.65a.75.75 0 01-1.1 0l-4.25-4.65a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                  </svg>
+                  <ChevronDown className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                 </ListboxButton>
-                <ListboxOptions className="absolute right-0 mt-2 max-h-60 w-24 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 z-10">
+                <ListboxOptions className="absolute right-0 top-full mt-1 w-24 overflow-auto rounded-md bg-[hsl(var(--popover))] py-1 text-sm shadow-md ring-1 ring-[hsl(var(--border))] z-50 focus:outline-none">
                   {SPEED_OPTIONS.map((s) => (
                     <ListboxOption
                       key={s}
                       value={s}
-                      className="cursor-pointer select-none px-3 py-2 hover:bg-gray-100"
+                      className="cursor-pointer select-none px-3 py-2 hover:bg-[hsl(var(--accent))] text-[hsl(var(--popover-foreground))]"
                     >
                       {({ selected }) => (
                         <div className="flex items-center justify-between">
                           <span className="font-medium">{s}x</span>
                           {selected && (
-                            <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M16.704 5.29a1 1 0 01.006 1.414l-7.1 7.2a1 1 0 01-1.42.01l-3.3-3.2a1 1 0 011.4-1.44l2.59 2.51 6.39-6.48a1 1 0 011.414-.006z" clipRule="evenodd" />
-                            </svg>
+                            <Check className="w-4 h-4 text-[hsl(var(--primary))]" />
                           )}
                         </div>
                       )}
@@ -712,12 +786,12 @@ export default function ReplayPlayer({
           </div>
         </div>
 
-        {/* Legend and Event Navigation - Same Row */}
+        {/* Legend, Current Event, and Event Navigation - Same Row */}
         <div className="flex items-center justify-between mt-2">
           {/* Legend */}
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-4 text-xs text-[hsl(var(--muted-foreground))]">
             <div className="flex items-center gap-1">
-              <div className="w-4 h-2 bg-blue-400 rounded" />
+              <div className="w-4 h-2 bg-blue-500/80 rounded" />
               <span>Typing Activity</span>
             </div>
             <div className="flex items-center gap-1">
@@ -725,7 +799,7 @@ export default function ReplayPlayer({
               <span>Chat</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-500 rounded" />
+              <div className="w-3 h-3 bg-emerald-500 rounded" />
               <span>Internal Paste</span>
             </div>
             <div className="flex items-center gap-1">
@@ -738,7 +812,7 @@ export default function ReplayPlayer({
             </div>
             {idlePeriods.length > 0 && (
               <div className="flex items-center gap-1">
-                <div className="w-3 h-2 bg-gray-700 rounded" />
+                <div className="w-3 h-2 bg-[hsl(var(--muted-foreground))] rounded" />
                 <span>Break (compressed)</span>
               </div>
             )}
@@ -746,64 +820,65 @@ export default function ReplayPlayer({
 
           {/* Event Navigation Dropdown */}
           <Menu as="div" className="relative">
-            <MenuButton className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
-              Events
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+            <MenuButton as={Button} variant="outline" size="sm" className="gap-2">
+              <div className="flex items-center gap-2">
+                <span>Events</span>
+                <ChevronDown className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+              </div>
             </MenuButton>
 
-            <MenuItems className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-96 overflow-y-auto focus:outline-none">
-              <div className="sticky top-0 bg-gray-50 px-4 py-2 border-b border-gray-200">
-                <p className="text-xs font-semibold text-gray-600 uppercase">
+            <MenuItems className="absolute right-0 mt-2 w-80 bg-[hsl(var(--popover))] rounded-lg shadow-xl border border-[hsl(var(--border))] z-20 max-h-96 overflow-y-auto focus:outline-none text-[hsl(var(--popover-foreground))]">
+              <div className="sticky top-0 bg-[hsl(var(--muted))] px-4 py-2 border-b border-[hsl(var(--border))]">
+                <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] uppercase">
                   Jump to Event ({navigableEvents.length})
                 </p>
               </div>
 
               {navigableEvents.length === 0 ? (
-                <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                <div className="px-4 py-8 text-center text-[hsl(var(--muted-foreground))] text-sm">
                   No events recorded
                 </div>
               ) : (
                 <div className="py-1">
                   {navigableEvents.map((event, i) => {
                     const isPast = event.time <= currentTime;
-                    const eventIcon = event.type === 'typing_start' ? '⌨️' :
-                                    event.type === 'chat' ? '💬' :
-                                    event.type === 'paste_internal' ? '📋' :
-                                    event.type === 'submission' ? '✅' : '🚫';
+
+                    const getEventIcon = (type: string) => {
+                      switch (type) {
+                        case 'typing_start': return <Keyboard className="w-4 h-4 text-blue-500" />;
+                        case 'chat': return <MessageSquare className="w-4 h-4 text-purple-500" />;
+                        case 'paste_internal': return <ClipboardCopy className="w-4 h-4 text-emerald-500" />;
+                        case 'paste_external': return <AlertTriangle className="w-4 h-4 text-destructive" />;
+                        case 'submission': return <Send className="w-4 h-4 text-orange-500" />;
+                        default: return null;
+                      }
+                    };
 
                     return (
                       <MenuItem key={i}>
                         {({ active }) => (
                           <button
                             onClick={() => setCurrentTime(event.time)}
-                            className={`w-full px-4 py-3 text-left transition-colors border-b border-gray-100 last:border-0 ${
-                              active ? 'bg-gray-50' :
-                              isPast ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'
-                            }`}
+                            className={`w-full px-4 py-3 text-left transition-colors border-b border-[hsl(var(--border))] last:border-0 ${active ? 'bg-[hsl(var(--accent))]' :
+                              isPast ? 'bg-[hsl(var(--muted))]/50' : 'bg-[hsl(var(--card))] hover:bg-[hsl(var(--accent))]'
+                              }`}
                           >
                             <div className="flex items-start gap-3">
-                              <span className="text-lg mt-0.5">{eventIcon}</span>
+                              <span className="mt-0.5 p-1 bg-[hsl(var(--muted))] rounded-md">
+                                {getEventIcon(event.type)}
+                              </span>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className={`text-sm font-medium truncate ${
-                                    isPast ? 'text-blue-700' : 'text-gray-900'
-                                  }`}>
+                                  <p className={`text-sm font-medium truncate ${isPast ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--foreground))]'
+                                    }`}>
                                     {event.label}
                                   </p>
-                                  <span className={`text-xs font-mono whitespace-nowrap ${
-                                    isPast ? 'text-blue-600' : 'text-gray-500'
-                                  }`}>
+                                  <span className={`text-xs font-mono whitespace-nowrap ${isPast ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'
+                                    }`}>
                                     {formatTime(event.time)}
                                   </span>
                                 </div>
-                                <p className={`text-xs mt-1 truncate ${
-                                  isPast ? 'text-blue-600' : 'text-gray-500'
-                                }`}>
+                                <p className="text-xs text-[hsl(var(--muted-foreground))] truncate mt-0.5">
                                   {event.description}
                                 </p>
                               </div>
@@ -828,21 +903,23 @@ export default function ReplayPlayer({
             <h2 className="font-semibold text-gray-900">Editor</h2>
           </div>
           <div className="flex-1 overflow-auto p-6 bg-white relative">
-            {/* Paste indicator */}
-            {lastPasteEvent && (
+            {/* Editor Event Indicator */}
+            {currentEvent && (
               <div
-                className={`absolute top-4 right-4 px-3 py-1 rounded text-sm font-medium ${
-                  lastPasteEvent.type === 'paste_external'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-green-100 text-green-700'
+                className={`absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-md ${
+                  currentEvent.type === 'paste_external'
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : currentEvent.type === 'paste_internal'
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                      : 'bg-orange-100 text-orange-700 border border-orange-200'
                 }`}
               >
-                {lastPasteEvent.type === 'paste_external'
-                  ? 'External Paste Blocked'
-                  : 'Content Pasted'}
+                {currentEvent.type === 'paste_external' && <AlertTriangle className="w-4 h-4" />}
+                {currentEvent.type === 'paste_internal' && <ClipboardCopy className="w-4 h-4" />}
+                {currentEvent.type === 'submission' && <Send className="w-4 h-4" />}
+                <span>{currentEvent.label}</span>
               </div>
             )}
-
             <div className="max-w-3xl mx-auto">
               <BlockNoteView
                 editor={editor}
@@ -879,8 +956,10 @@ export default function ReplayPlayer({
                 content: msg.content,
                 conversationTitle: msg.conversationTitle,
                 timestamp: msg.timestamp,
-                metadata: msg.metadata as { webSearchEnabled?: boolean; webSearchUsed?: boolean; [key: string]: any } | undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                metadata: msg.metadata as { webSearchEnabled?: boolean; webSearchUsed?: boolean;[key: string]: unknown } | undefined,
               }))}
+              highlightedMessageId={highlightedMessageId}
             />
           </div>
         )}

@@ -1,11 +1,11 @@
 import { db } from '@/db/db';
 import { assignments, instructors, studentSessions, editorEvents } from '@/db/schema';
-import { eq, desc, count, and } from 'drizzle-orm';
+import { eq, count, and } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
-import BackLink from '@/components/ui/BackLink';
-import DeleteAssignmentButton from './DeleteAssignmentButton';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, Edit2 } from 'lucide-react';
 import AssignmentTabs from './AssignmentTabs';
 
 async function getInstructor() {
@@ -107,27 +107,30 @@ export default async function AssignmentDetailPage({ params }: PageProps) {
   const isOverdue = new Date(assignment.deadline) < new Date();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[hsl(var(--background))]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
-            <BackLink href="/instructor/dashboard" label="Back" />
+            <Link href="/instructor/dashboard">
+              <Button variant="ghost" size="icon" className="hover:bg-[hsl(var(--muted))]">
+                <ChevronLeft className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
+              </Button>
+            </Link>
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">{assignment.title}</h1>
-              <p className={`text-sm ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+              <h1 className="text-xl font-bold font-heading text-[hsl(var(--foreground))]">{assignment.title}</h1>
+              <p className={`text-sm ${isOverdue ? 'text-[hsl(var(--destructive))]' : 'text-[hsl(var(--muted-foreground))]'}`}>
                 Deadline: {new Date(assignment.deadline).toLocaleString()}
                 {isOverdue && ' (Overdue)'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href={`/instructor/assignments/${id}/edit`}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Edit
+              <Link href={`/instructor/assignments/${id}/edit`}>
+                <Button variant="outline">
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
               </Link>
-              <DeleteAssignmentButton assignmentId={id} />
             </div>
           </div>
         </div>

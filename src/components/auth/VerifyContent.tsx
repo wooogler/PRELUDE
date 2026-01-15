@@ -42,7 +42,7 @@ export default function VerifyContent() {
           setError(data.error || 'Verification failed');
           setIsVerifying(false);
         }
-      } catch (err) {
+      } catch {
         setError('Verification failed');
         setIsVerifying(false);
       }
@@ -103,7 +103,7 @@ export default function VerifyContent() {
         const data = await res.json();
         setError(data.error || 'Failed to set password');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to set password');
     } finally {
       setIsSubmitting(false);

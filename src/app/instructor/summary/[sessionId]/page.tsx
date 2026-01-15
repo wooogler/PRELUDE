@@ -112,12 +112,12 @@ export default async function ViewPage({ params }: PageProps) {
   }
 
   // Calculate word count from final document
-  const finalDocument = (latestSubmission?.eventData || latestSnapshot?.eventData) as any[] | undefined;
+  const finalDocument = (latestSubmission?.eventData || latestSnapshot?.eventData) as Record<string, unknown>[] | undefined;
   const wordCount = finalDocument
     ? JSON.stringify(finalDocument)
-        .replace(/<[^>]*>/g, '') // Remove HTML tags
-        .split(/\s+/)
-        .filter(word => word.length > 0).length
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .split(/\s+/)
+      .filter(word => word.length > 0).length
     : 0;
 
   const stats = {
@@ -137,9 +137,9 @@ export default async function ViewPage({ params }: PageProps) {
       session={session}
       assignment={assignment}
       stats={stats}
-      latestSnapshot={latestSnapshot}
-      submissions={submissions}
-      latestSubmission={latestSubmission}
+      latestSnapshot={latestSnapshot ? { ...latestSnapshot, eventData: latestSnapshot.eventData as Record<string, unknown>[] } : null}
+      submissions={submissions.map(s => ({ ...s, eventData: s.eventData as Record<string, unknown>[] }))}
+      latestSubmission={latestSubmission ? { ...latestSubmission, eventData: latestSubmission.eventData as Record<string, unknown>[] } : null}
     />
   );
 }
