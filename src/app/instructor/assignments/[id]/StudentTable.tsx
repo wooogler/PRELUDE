@@ -17,7 +17,7 @@ import {
 import DeleteStudentSessionButton from './DeleteStudentSessionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUpDown, PlayCircle, FileText, Users } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PlayCircle, FileText, Users } from 'lucide-react';
 import { Tooltip } from 'react-tooltip';
 import 'react-tooltip/dist/react-tooltip.css';
 
@@ -46,6 +46,7 @@ export default function StudentTable({ students }: StudentTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'studentName', desc: false }
   ]);
+  const [sortKey, setSortKey] = useState('studentName:asc');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -167,7 +168,13 @@ export default function StudentTable({ students }: StudentTableProps) {
       columnFilters,
       globalFilter,
     },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const nextSorting = typeof updater === 'function' ? updater(sorting) : updater;
+      setSorting(nextSorting);
+      if (nextSorting[0]) {
+        setSortKey(`${nextSorting[0].id}:${nextSorting[0].desc ? 'desc' : 'asc'}`);
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
@@ -195,8 +202,8 @@ export default function StudentTable({ students }: StudentTableProps) {
   return (
     <div>
       {/* Search Bar */}
-      <div className="p-4 border-b border-[hsl(var(--border))]">
-        <div className="relative max-w-sm">
+      <div className="p-4 border-b border-[hsl(var(--border))] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-sm w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[hsl(var(--muted-foreground))]" />
           <Input
             type="text"
@@ -206,6 +213,28 @@ export default function StudentTable({ students }: StudentTableProps) {
             className="pl-9"
           />
         </div>
+        <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+          <span className="text-xs uppercase tracking-wide">Sort by</span>
+          <select
+            value={sortKey}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSortKey(value);
+              const [id, direction] = value.split(':');
+              setSorting([{ id, desc: direction === 'desc' }]);
+            }}
+            className="border border-[hsl(var(--border))] rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+          >
+            <option value="studentName:asc">Name (A → Z)</option>
+            <option value="studentName:desc">Name (Z → A)</option>
+            <option value="startedAt:desc">Started (Newest)</option>
+            <option value="startedAt:asc">Started (Oldest)</option>
+            <option value="lastSavedAt:desc">Last Active (Newest)</option>
+            <option value="lastSavedAt:asc">Last Active (Oldest)</option>
+            <option value="stats.submissions:desc">Submissions (High → Low)</option>
+            <option value="stats.submissions:asc">Submissions (Low → High)</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}
@@ -214,21 +243,33 @@ export default function StudentTable({ students }: StudentTableProps) {
           <thead className="bg-[hsl(var(--muted))]/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={`px-6 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-[hsl(var(--foreground))]' : ''
-                      } ${header.id === 'actions' ? 'text-right' : ''}`}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className={`flex items-center gap-2 ${header.id === 'actions' ? 'justify-end' : ''}`}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getCanSort() && (
-                        <ArrowUpDown className="w-3 h-3 text-[hsl(var(--muted-foreground))]" />
-                      )}
-                    </div>
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isSorted = header.column.getIsSorted();
+                  return (
+                    <th
+                      key={header.id}
+                      className={`px-6 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider ${header.column.getCanSort() ? 'cursor-pointer select-none hover:text-[hsl(var(--foreground))]' : ''
+                        } ${header.id === 'actions' ? 'text-right' : ''}`}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className={`flex items-center gap-2 ${header.id === 'actions' ? 'justify-end' : ''}`}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && (
+                          <span
+                            className={`text-[10px] font-semibold ${
+                              isSorted
+                                ? 'text-[hsl(var(--foreground))]'
+                                : 'text-[hsl(var(--muted-foreground))]'
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {isSorted === 'asc' ? '▲' : isSorted === 'desc' ? '▼' : '▵'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
